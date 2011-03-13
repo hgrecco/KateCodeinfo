@@ -136,13 +136,14 @@ QString KateCodeinfoPlugin::configPageName (uint number) const
 QString KateCodeinfoPlugin::configPageFullName (uint number) const
 {
   if (number == 0) {
-    return i18n("Backtrace Browser Settings");
+    return i18n("Codeinfo Settings");
   }
   return QString();
 }
 
 KIcon KateCodeinfoPlugin::configPageIcon (uint number) const
 {
+  Q_UNUSED(number)
   return KIcon("kbugbuster");
 }
 
@@ -175,10 +176,14 @@ KateCodeinfoPluginView::~KateCodeinfoPluginView ()
 
 void KateCodeinfoPluginView::readSessionConfig(KConfigBase* config, const QString& group)
 {
+    Q_UNUSED(config);
+    Q_UNUSED(group);
 }
 
 void KateCodeinfoPluginView::writeSessionConfig(KConfigBase* config, const QString& group)
 {
+    Q_UNUSED(config);
+    Q_UNUSED(group);
 }
 
 void KateCodeinfoPluginView::loadFile()
@@ -212,12 +217,11 @@ void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
 
     // Line
     it->setData(1, Qt::DisplayRole, QString::number(info.line));
-    it->setData(1, Qt::ToolTipRole, QString::number(info.line));
-    it->setData(1, Qt::UserRole, QVariant(info.line));
+    it->setData(1, Qt::ToolTipRole, info.line);
 
     // Col
     it->setData(2, Qt::DisplayRole, QString::number(info.col));
-    it->setData(2, Qt::ToolTipRole, QString::number(info.col));
+    it->setData(2, Qt::ToolTipRole, info.col);
 
     // Code
     it->setData(3, Qt::DisplayRole, info.code);
@@ -235,9 +239,9 @@ void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
   lstBacktrace->resizeColumnToContents(3);
 
   if (lstBacktrace->topLevelItemCount()) {
-    setStatus(i18n("Loading backtrace succeeded"));
+    setStatus(i18n("Loading codeinfo succeeded"));
   } else {
-    setStatus(i18n("Loading backtrace failed"));
+    setStatus(i18n("Loading codeinfo failed"));
   }
 }
 
@@ -252,43 +256,18 @@ void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
 {
   Q_UNUSED(column);
 
-  QVariant variant = item->data(2, Qt::UserRole);
-  if (variant.isValid()) {
-    int line = variant.toInt();
-    QString file = QDir::fromNativeSeparators(item->data(1, Qt::ToolTipRole).toString());
-    file = QDir::cleanPath(file);
+  QString path = item->data(0, Qt::ToolTipRole).toString();
+  uint line = item->data(1, Qt::ToolTipRole).toUInt();
+  uint col = item->data(2, Qt::ToolTipRole).toUInt();
 
-    QString path = file;
-    // if not absolute path + exists, try to find with index
-    if (!QFile::exists(path)) {
-      // try to match the backtrace forms ".*/foo/bar.txt" and "foo/bar.txt"
-      static QRegExp rx1("/([^/]+)/([^/]+)$");
-      int idx = rx1.indexIn(file);
-      if (idx != -1) {
-        file = rx1.cap(1) + '/' + rx1.cap(2);
-      } else {
-        static QRegExp rx2("([^/]+)/([^/]+)$");
-        idx = rx2.indexIn(file);
-        if (idx != -1) {
-          // file is of correct form
-        } else {
-          kDebug() << "file patter did not match:" << file;
-          setStatus(i18n("File not found: %1", file));
-          return;
-        }
-      }
-      path = KateCodeinfoPlugin::self().database().value(file);
-    }
-
-    if (!path.isEmpty() && QFile::exists(path)) {
-      KUrl url(path);
-      KTextEditor::View* kv = mw->openUrl(url);
-      kv->setCursorPosition(KTextEditor::Cursor(line - 1, 0));
-      kv->setFocus();
-      setStatus(i18n("Opened file: %1", file));
-    }
+  if (!path.isEmpty() && QFile::exists(path)) {
+    KUrl url(path);
+    KTextEditor::View* kv = mw->openUrl(url);
+    kv->setCursorPosition(KTextEditor::Cursor(line - 1, col));
+    kv->setFocus();
+    setStatus(i18n("Opened file: %1", path));
   } else {
-    setStatus(i18n("No debugging information available"));
+    setStatus(i18n("File not found: %1", path));
   }
 }
 

@@ -55,7 +55,6 @@ static CodeinfoInfo parseCodeinfoLine(const QString& line)
   kDebug() << "Unknown codeinfo line:" << line;
 
   CodeinfoInfo info;
-  info.line = -1;
   return info;
 }
 

@@ -26,6 +26,7 @@ class CodeinfoInfo
 {
 
   public:
+    CodeinfoInfo():line(-1),col(-1){};
     QString filename;
     QString code;
     QString message;
@@ -35,7 +36,7 @@ class CodeinfoInfo
 
 namespace KateCodeinfoParser {
 
-QList<CodeinfoInfo> parseCodeinfo(const QString& bt);
+QList<CodeinfoInfo> parseCodeinfo(const QString& ci);
 
 }
 
