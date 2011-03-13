@@ -183,7 +183,7 @@ void KateCodeinfoPluginView::writeSessionConfig(KConfigBase* config, const QStri
 
 void KateCodeinfoPluginView::loadFile()
 {
-  QString url = KFileDialog::getOpenFileName(KUrl(), QString(), mw->window(), i18n("Load Backtrace"));
+  QString url = KFileDialog::getOpenFileName(KUrl(), QString(), mw->window(), i18n("Load Codeinfo"));
   QFile f(url);
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QString str = f.readAll();
@@ -193,36 +193,46 @@ void KateCodeinfoPluginView::loadFile()
 
 void KateCodeinfoPluginView::loadClipboard()
 {
-  QString bt = QApplication::clipboard()->text();
-  loadBacktrace(bt);
+  QString ci = QApplication::clipboard()->text();
+  loadBacktrace(ci);
 }
 
-void KateCodeinfoPluginView::loadBacktrace(const QString& bt)
+void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
 {
-  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseBacktrace(bt);
+  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci);
 
   lstBacktrace->clear();
   foreach (const CodeinfoInfo& info, infos) {
     QTreeWidgetItem* it = new QTreeWidgetItem(lstBacktrace);
-    it->setData(0, Qt::DisplayRole, QString::number(info.step));
-    it->setData(0, Qt::ToolTipRole, QString::number(info.step));
-    QFileInfo fi(info.filename);
-    it->setData(1, Qt::DisplayRole, fi.fileName());
-    it->setData(1, Qt::ToolTipRole, info.filename);
 
-    if (info.type == CodeinfoInfo::Source) {
-      it->setData(2, Qt::DisplayRole, QString::number(info.line));
-      it->setData(2, Qt::ToolTipRole, QString::number(info.line));
-      it->setData(2, Qt::UserRole, QVariant(info.line));
-    }
-    it->setData(3, Qt::DisplayRole, info.function);
-    it->setData(3, Qt::ToolTipRole, info.function);
+    // File
+    QFileInfo fi(info.filename);
+    it->setData(0, Qt::DisplayRole, fi.fileName());
+    it->setData(0, Qt::ToolTipRole, info.filename);
+
+    // Line
+    it->setData(1, Qt::DisplayRole, QString::number(info.line));
+    it->setData(1, Qt::ToolTipRole, QString::number(info.line));
+    it->setData(1, Qt::UserRole, QVariant(info.line));
+
+    // Col
+    it->setData(2, Qt::DisplayRole, QString::number(info.col));
+    it->setData(2, Qt::ToolTipRole, QString::number(info.col));
+
+    // Code
+    it->setData(3, Qt::DisplayRole, info.code);
+    it->setData(3, Qt::ToolTipRole, info.code);
+
+    // Message
+    it->setData(4, Qt::DisplayRole, info.message);
+    it->setData(4, Qt::ToolTipRole, info.message);
 
     lstBacktrace->addTopLevelItem(it);
   }
   lstBacktrace->resizeColumnToContents(0);
   lstBacktrace->resizeColumnToContents(1);
   lstBacktrace->resizeColumnToContents(2);
+  lstBacktrace->resizeColumnToContents(3);
 
   if (lstBacktrace->topLevelItemCount()) {
     setStatus(i18n("Loading backtrace succeeded"));

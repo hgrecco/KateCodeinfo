@@ -24,28 +24,18 @@
 
 class CodeinfoInfo
 {
-  public:
-    enum Type {
-      Source = 0,
-      Lib,
-      Unknown,
-      Invalid
-    };
 
   public:
-    QString original;
     QString filename;
-    QString function;
-    QString address;
-    int step;
+    QString code;
+    QString message;
     int line;
-
-    Type type;
+    int col;
 };
 
 namespace KateCodeinfoParser {
 
-QList<CodeinfoInfo> parseBacktrace(const QString& bt);
+QList<CodeinfoInfo> parseCodeinfo(const QString& bt);
 
 }
 

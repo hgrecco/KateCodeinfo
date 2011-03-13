@@ -34,135 +34,42 @@ static QString eolDelimiter(const QString& str)
   return separator;
 }
 
-static bool lineNoLessThan(const QString& lhs, const QString& rhs)
+static CodeinfoInfo parseCodeinfoLine(const QString& line)
 {
-  QRegExp rx("^#(\\d+)");
-  int ilhs = rx.indexIn(lhs);
-  int lhsLn = rx.cap(1).toInt();
-  int irhs = rx.indexIn(rhs);
-  int rhsLn = rx.cap(1).toInt();
-  if (ilhs != -1 && irhs != -1) {
-    return lhsLn < rhsLn;
-  } else {
-    return lhs < rhs;
-  }
-}
-
-static QStringList normalizeBt(const QStringList& l)
-{
-  QStringList normalized;
-
-  bool append = false;
-
-  for (int i = 0; i < l.size(); ++i) {
-    QString str = l[i].trimmed();
-    if (str.length()) {
-      if (str[0] == QChar('#')) {
-        normalized << str;
-        append = true;
-      } else if (append) {
-        normalized.last() += ' ' + str;
-      }
-    } else {
-      append = false;
-    }
-  }
-
-  qSort(normalized.begin(), normalized.end(), lineNoLessThan);
-
-  // now every single line contains a whole backtrace info
-  return normalized;
-}
-
-static CodeinfoInfo parseBtLine(const QString& line)
-{
-  int index;
-
   // the syntax types we support are
-  // a) #24 0xb688ff8e in QApplication::notify (this=0xbf997e8c, receiver=0x82607e8, e=0xbf997074) at kernel/qapplication.cpp:3115
-  // b) #39 0xb634211c in g_main_context_dispatch () from /usr/lib/libglib-2.0.so.0
-  // c) #41 0x0805e690 in ?? ()
-  // d) #5  0xffffe410 in __kernel_vsyscall ()
+  // filename \t line number \t column number \t code \t message
 
-
-  // try a) cap #number(1), address(2), function(3), filename(4), linenumber(5)
-  static QRegExp rxa("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+(.+)\\s+at\\s+(.+):(\\d+)$");
-  index = rxa.indexIn(line);
-  if (index == 0) {
+  QStringList parsed = line.split("\t");
+  if (parsed.count() > 4) {
     CodeinfoInfo info;
-    info.original = line;
-    info.filename = rxa.cap(4);
-    info.function = rxa.cap(3);
-    info.address = rxa.cap(2);
-    info.line = rxa.cap(5).toInt();
-    info.step = rxa.cap(1).toInt();
-    info.type = CodeinfoInfo::Source;
+    info.filename = parsed[0];
+    info.line = parsed[1].toInt();
+    info.col = parsed[2].toInt();
+    info.code = parsed[3];
+    for (int i=4; i<parsed.count(); i++) {
+        info.message.append(parsed[i]);
+    }
     return info;
   }
 
-  // try b) cap #number(1), address(2), function(3), lib(4)
-  static QRegExp rxb("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+(.+)\\s+from\\s+(.+)$");
-  index = rxb.indexIn(line);
-  if (index == 0) {
-    CodeinfoInfo info;
-    info.original = line;
-    info.filename = rxb.cap(4);
-    info.function = rxb.cap(3);
-    info.address = rxb.cap(2);
-    info.line = -1;
-    info.step = rxb.cap(1).toInt();
-    info.type = CodeinfoInfo::Lib;
-    return info;
-  }
-
-  // try c) #41 0x0805e690 in ?? ()
-  static QRegExp rxc("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+\\?\\?\\s+\\(\\)$");
-  index = rxc.indexIn(line);
-  if (index == 0) {
-    CodeinfoInfo info;
-    info.original = line;
-    info.filename = QString();
-    info.function = QString();
-    info.address = rxc.cap(2);
-    info.line = -1;
-    info.step = rxc.cap(1).toInt();
-    info.type = CodeinfoInfo::Unknown;
-    return info;
-  }
-
-  // try d) #5  0xffffe410 in __kernel_vsyscall ()
-  static QRegExp rxd("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+(.+)$");
-  index = rxd.indexIn(line);
-  if (index == 0) {
-    CodeinfoInfo info;
-    info.original = line;
-    info.filename = QString();
-    info.function = rxd.cap(3);
-    info.address = rxd.cap(2);
-    info.line = -1;
-    info.step = rxd.cap(1).toInt();
-    info.type = CodeinfoInfo::Unknown;
-    return info;
-  }
-
-  kDebug() << "Unknown backtrace line:" << line;
+  kDebug() << "Unknown codeinfo line:" << line;
 
   CodeinfoInfo info;
-  info.type = CodeinfoInfo::Invalid;
+  info.line = -1;
   return info;
 }
 
-QList<CodeinfoInfo>  KateCodeinfoParser::parseBacktrace(const QString& bt)
+QList<CodeinfoInfo>  KateCodeinfoParser::parseCodeinfo(const QString& ci)
 {
-  QStringList l = bt.split(eolDelimiter(bt), QString::SkipEmptyParts);
+  QStringList l = ci.split(eolDelimiter(ci), QString::SkipEmptyParts);
 
-  l = normalizeBt(l);
+  //l = normalizeBt(l);
 
   QList<CodeinfoInfo> btList;
   for (int i = 0; i < l.size(); ++i) {
-    CodeinfoInfo info = parseBtLine(l[i]);
-    if (info.type != CodeinfoInfo::Invalid) {
-      btList.append(parseBtLine(l[i]));
+    CodeinfoInfo info = parseCodeinfoLine(l[i]);
+    if (info.line >= 0) {
+      btList.append(parseCodeinfoLine(l[i]));
     }
   }
 
