@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+ServiceTypes=Kate/Plugin
+X-KDE-Library=katecodeinfoplugin
+X-Kate-Version=3.0
+Name=Codeinfo
+Comment=Code information navigation tool
+author=Hernan E. Grecco, hernan.grecco@gmail.com

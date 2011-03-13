@@ -1,5 +1,5 @@
 /* This file is part of the KDE project
-   Copyright 2008 Dominik Haumann <dhaumann kde org>
+   Copyright 2011 Hernan E. Grecco <hernan.grecco gmail com>
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -16,7 +16,7 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "btparser.h"
+#include "codeinfoparser.h"
 
 #include <QStringList>
 
@@ -74,7 +74,7 @@ static QStringList normalizeBt(const QStringList& l)
   return normalized;
 }
 
-static BtInfo parseBtLine(const QString& line)
+static CodeinfoInfo parseBtLine(const QString& line)
 {
   int index;
 
@@ -89,14 +89,14 @@ static BtInfo parseBtLine(const QString& line)
   static QRegExp rxa("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+(.+)\\s+at\\s+(.+):(\\d+)$");
   index = rxa.indexIn(line);
   if (index == 0) {
-    BtInfo info;
+    CodeinfoInfo info;
     info.original = line;
     info.filename = rxa.cap(4);
     info.function = rxa.cap(3);
     info.address = rxa.cap(2);
     info.line = rxa.cap(5).toInt();
     info.step = rxa.cap(1).toInt();
-    info.type = BtInfo::Source;
+    info.type = CodeinfoInfo::Source;
     return info;
   }
 
@@ -104,14 +104,14 @@ static BtInfo parseBtLine(const QString& line)
   static QRegExp rxb("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+(.+)\\s+from\\s+(.+)$");
   index = rxb.indexIn(line);
   if (index == 0) {
-    BtInfo info;
+    CodeinfoInfo info;
     info.original = line;
     info.filename = rxb.cap(4);
     info.function = rxb.cap(3);
     info.address = rxb.cap(2);
     info.line = -1;
     info.step = rxb.cap(1).toInt();
-    info.type = BtInfo::Lib;
+    info.type = CodeinfoInfo::Lib;
     return info;
   }
 
@@ -119,14 +119,14 @@ static BtInfo parseBtLine(const QString& line)
   static QRegExp rxc("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+\\?\\?\\s+\\(\\)$");
   index = rxc.indexIn(line);
   if (index == 0) {
-    BtInfo info;
+    CodeinfoInfo info;
     info.original = line;
     info.filename = QString();
     info.function = QString();
     info.address = rxc.cap(2);
     info.line = -1;
     info.step = rxc.cap(1).toInt();
-    info.type = BtInfo::Unknown;
+    info.type = CodeinfoInfo::Unknown;
     return info;
   }
 
@@ -134,34 +134,34 @@ static BtInfo parseBtLine(const QString& line)
   static QRegExp rxd("^#(\\d+)\\s+(0x\\w+)\\s+in\\s+(.+)$");
   index = rxd.indexIn(line);
   if (index == 0) {
-    BtInfo info;
+    CodeinfoInfo info;
     info.original = line;
     info.filename = QString();
     info.function = rxd.cap(3);
     info.address = rxd.cap(2);
     info.line = -1;
     info.step = rxd.cap(1).toInt();
-    info.type = BtInfo::Unknown;
+    info.type = CodeinfoInfo::Unknown;
     return info;
   }
 
   kDebug() << "Unknown backtrace line:" << line;
 
-  BtInfo info;
-  info.type = BtInfo::Invalid;
+  CodeinfoInfo info;
+  info.type = CodeinfoInfo::Invalid;
   return info;
 }
 
-QList<BtInfo>  KateBtParser::parseBacktrace(const QString& bt)
+QList<CodeinfoInfo>  KateCodeinfoParser::parseBacktrace(const QString& bt)
 {
   QStringList l = bt.split(eolDelimiter(bt), QString::SkipEmptyParts);
 
   l = normalizeBt(l);
 
-  QList<BtInfo> btList;
+  QList<CodeinfoInfo> btList;
   for (int i = 0; i < l.size(); ++i) {
-    BtInfo info = parseBtLine(l[i]);
-    if (info.type != BtInfo::Invalid) {
+    CodeinfoInfo info = parseBtLine(l[i]);
+    if (info.type != CodeinfoInfo::Invalid) {
       btList.append(parseBtLine(l[i]));
     }
   }

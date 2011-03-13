@@ -1,3 +1,3 @@
 #! /bin/sh
 $EXTRACTRC *.ui >> rc.cpp
-$XGETTEXT *.cpp -o $podir/katebacktracebrowserplugin.pot
+$XGETTEXT *.cpp -o $podir/katecodeinfoplugin.pot

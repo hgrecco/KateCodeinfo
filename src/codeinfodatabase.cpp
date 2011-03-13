@@ -1,5 +1,5 @@
 /* This file is part of the KDE project
-   Copyright 2008 Dominik Haumann <dhaumann kde org>
+   Copyright 2011 Hernan E. Grecco <hernan.grecco gmail com>
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -16,7 +16,7 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "btdatabase.h"
+#include "codeinfodatabase.h"
 
 #include <QFile>
 #include <QDataStream>
@@ -24,7 +24,7 @@
 
 #include <kdebug.h>
 
-void KateBtDatabase::loadFromFile(const QString& url)
+void KateCodeinfoDatabase::loadFromFile(const QString& url)
 {
   QFile file(url);
   if (file.open(QIODevice::ReadOnly)) {
@@ -35,7 +35,7 @@ void KateBtDatabase::loadFromFile(const QString& url)
   kDebug() << "Number of entries in the backtrace database:" << db.size();
 }
 
-void KateBtDatabase::saveToFile(const QString& url) const
+void KateCodeinfoDatabase::saveToFile(const QString& url) const
 {
   QFile file(url);
   if (file.open(QIODevice::WriteOnly)) {
@@ -45,7 +45,7 @@ void KateBtDatabase::saveToFile(const QString& url) const
   }
 }
 
-QString KateBtDatabase::value(const QString& key)
+QString KateCodeinfoDatabase::value(const QString& key)
 {
   // key is either of the form "foo/bar.txt" or only "bar.txt"
   QString file = key;
@@ -71,7 +71,7 @@ QString KateBtDatabase::value(const QString& key)
   return QString();
 }
 
-void KateBtDatabase::add(const QString& folder, const QStringList& files)
+void KateCodeinfoDatabase::add(const QString& folder, const QStringList& files)
 {
   QMutexLocker locker(&mutex);
   foreach (const QString& file, files) {
@@ -83,7 +83,7 @@ void KateBtDatabase::add(const QString& folder, const QStringList& files)
   }
 }
 
-int KateBtDatabase::size() const
+int KateCodeinfoDatabase::size() const
 {
   QMutexLocker locker(&mutex);
   return db.size();

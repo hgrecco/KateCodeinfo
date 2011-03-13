@@ -1,5 +1,5 @@
 /* This file is part of the KDE project
-   Copyright 2008 Dominik Haumann <dhaumann kde org>
+   Copyright 2011 Hernan E. Grecco <hernan.grecco gmail com>
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -17,12 +17,12 @@
 */
 
 #include "btfileindexer.h"
-#include "btdatabase.h"
+#include "codeinfodatabase.h"
 
 #include <QDir>
 #include <kdebug.h>
 
-BtFileIndexer::BtFileIndexer(KateBtDatabase* database)
+BtFileIndexer::BtFileIndexer(KateCodeinfoDatabase* database)
   : QThread()
   , cancelAsap(false)
   , db(database)

@@ -1,5 +1,5 @@
 /* This file is part of the KDE project
-   Copyright 2008 Dominik Haumann <dhaumann kde org>
+   Copyright 2011 Hernan E. Grecco <hernan.grecco gmail com>
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -16,8 +16,8 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef KATE_BACKTRACEBROWSER_H
-#define KATE_BACKTRACEBROWSER_H
+#ifndef KATE_CODEINFO_H
+#define KATE_CODEINFO_H
 
 #include <ktexteditor/document.h>
 #include <ktexteditor/configpage.h>
@@ -25,27 +25,27 @@
 #include <kate/pluginconfigpageinterface.h>
 #include <kate/mainwindow.h>
 
-#include "ui_btbrowserwidget.h"
-#include "ui_btconfigwidget.h"
-#include "btdatabase.h"
+#include "ui_codeinfowidget.h"
+#include "ui_codeinfoconfigwidget.h"
+#include "codeinfodatabase.h"
 #include "btfileindexer.h"
 
 #include <QString>
 #include <QTimer>
 
-class KateBtBrowserPlugin: public Kate::Plugin, public Kate::PluginConfigPageInterface
+class KateCodeinfoPlugin: public Kate::Plugin, public Kate::PluginConfigPageInterface
 {
     Q_OBJECT
     Q_INTERFACES(Kate::PluginConfigPageInterface)
   public:
-    explicit KateBtBrowserPlugin( QObject* parent = 0, const QList<QVariant>& = QList<QVariant>() );
-    virtual ~KateBtBrowserPlugin();
+    explicit KateCodeinfoPlugin( QObject* parent = 0, const QList<QVariant>& = QList<QVariant>() );
+    virtual ~KateCodeinfoPlugin();
 
-    static KateBtBrowserPlugin& self();
+    static KateCodeinfoPlugin& self();
 
     Kate::PluginView *createView (Kate::MainWindow *mainWindow);
 
-    KateBtDatabase& database();
+    KateCodeinfoDatabase& database();
     BtFileIndexer& fileIndexer();
 
     void startIndexer();
@@ -67,19 +67,19 @@ class KateBtBrowserPlugin: public Kate::Plugin, public Kate::PluginConfigPageInt
   // private data
   //
   private:
-    KateBtDatabase db;
+    KateCodeinfoDatabase db;
     BtFileIndexer indexer;
-    static KateBtBrowserPlugin* s_self;
+    static KateCodeinfoPlugin* s_self;
 };
 
-class KateBtBrowserPluginView : public Kate::PluginView, public Ui::BtBrowserWidget
+class KateCodeinfoPluginView : public Kate::PluginView, public Ui::CodeinfoWidget
 {
     Q_OBJECT
 
   public:
-    KateBtBrowserPluginView(Kate::MainWindow* mainWindow);
+    KateCodeinfoPluginView(Kate::MainWindow* mainWindow);
 
-    ~KateBtBrowserPluginView();
+    ~KateCodeinfoPluginView();
 
     virtual void readSessionConfig (KConfigBase* config, const QString& groupPrefix);
     virtual void writeSessionConfig (KConfigBase* config, const QString& groupPrefix);
@@ -102,12 +102,12 @@ class KateBtBrowserPluginView : public Kate::PluginView, public Ui::BtBrowserWid
     QTimer timer;
 };
 
-class KateBtConfigWidget : public Kate::PluginConfigPage, private Ui::BtConfigWidget
+class KateCodeInfoConfigWidget : public Kate::PluginConfigPage, private Ui::CodeinfoConfigWidget
 {
     Q_OBJECT
   public:
-    explicit KateBtConfigWidget(QWidget* parent = 0, const char* name = 0);
-    virtual ~KateBtConfigWidget();
+    explicit KateCodeInfoConfigWidget(QWidget* parent = 0, const char* name = 0);
+    virtual ~KateCodeInfoConfigWidget();
 
   public slots:
     virtual void apply();
@@ -123,20 +123,20 @@ class KateBtConfigWidget : public Kate::PluginConfigPage, private Ui::BtConfigWi
     bool m_changed;
 };
 
-class KateBtConfigDialog : public KDialog
+class KateCodeInfoConfigDialog : public KDialog
 {
     Q_OBJECT
   public:
-    KateBtConfigDialog(QWidget* parent = 0);
-    ~KateBtConfigDialog();
+    KateCodeInfoConfigDialog(QWidget* parent = 0);
+    ~KateCodeInfoConfigDialog();
 
   public slots:
     void changed();
 
 private:
-    KateBtConfigWidget* m_configWidget;
+    KateCodeInfoConfigWidget* m_configWidget;
 };
 
-#endif //KATE_BACKTRACEBROWSER_H
+#endif //KATE_CODEINFO_H
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

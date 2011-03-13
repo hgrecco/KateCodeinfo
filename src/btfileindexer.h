@@ -1,5 +1,5 @@
 /* This file is part of the KDE project
-   Copyright 2008 Dominik Haumann <dhaumann kde org>
+   Copyright 2011 Hernan E. Grecco <hernan.grecco gmail com>
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -23,13 +23,13 @@
 #include <QString>
 #include <QStringList>
 
-class KateBtDatabase;
+class KateCodeinfoDatabase;
 
 class BtFileIndexer : public QThread
 {
   Q_OBJECT
   public:
-    BtFileIndexer(KateBtDatabase* db);
+    BtFileIndexer(KateCodeinfoDatabase* db);
     virtual ~BtFileIndexer();
     void setSearchPaths(const QStringList& urls);
 
@@ -46,7 +46,7 @@ class BtFileIndexer : public QThread
     QStringList searchPaths;
     QStringList filter;
 
-    KateBtDatabase* db;
+    KateCodeinfoDatabase* db;
 };
 
 #endif
