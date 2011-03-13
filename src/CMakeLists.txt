@@ -1,3 +1,15 @@
+########### independent build #########
+# This section can be deleted if 
+# the plugin is compiled within kate
+cmake_minimum_required(VERSION 2.8)
+
+project(kate-codeinfo)
+find_package(KDE4 REQUIRED)
+include (KDE4Defaults)
+add_definitions (${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
+include_directories (${CMAKE_CURRENT_BINARY_DIR} ${KDE4_INCLUDES})
+
+
 ########### next target ###############
 
 set(katebacktracebrowserplugin_PART_SRCS
