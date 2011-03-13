@@ -15,7 +15,7 @@
     <number>0</number>
    </property>
    <item row="0" column="0">
-    <widget class="QTreeWidget" name="lstBacktrace">
+    <widget class="QTreeWidget" name="lstCodeinfo">
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
@@ -81,11 +81,34 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="btnConfigure">
-       <property name="text">
-        <string>Configure Paths...</string>
+      <widget class="QComboBox" name="cmbActions">
+       <property name="editable">
+        <bool>false</bool>
        </property>
       </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnRun">
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
      <item>
       <widget class="QPushButton" name="btnClipboard">

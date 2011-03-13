@@ -21,7 +21,6 @@
 #include "katecodeinfo.moc"
 
 #include "codeinfoparser.h"
-#include "btfileindexer.h"
 
 #include <klocale.h>          // i18n
 #include <kpluginfactory.h>
@@ -47,30 +46,16 @@ K_EXPORT_PLUGIN(KatecodeinfoFactory(KAboutData("katecodeinfoplugin","katecodeinf
 
 
 KateCodeinfoPlugin* KateCodeinfoPlugin::s_self = 0L;
-static QStringList fileExtensions =
-    QStringList() << "*.cpp" << "*.cxx" << "*.c" << "*.cc"
-                  << "*.h" << "*.hpp" << "*.hxx"
-                  << "*.moc";
-
 
 KateCodeinfoPlugin::KateCodeinfoPlugin( QObject* parent, const QList<QVariant>&)
   : Kate::Plugin ( (Kate::Application*)parent )
   , Kate::PluginConfigPageInterface()
-  , indexer(&db)
 {
   s_self = this;
-  db.loadFromFile(KStandardDirs::locateLocal( "data", "kate/backtracedatabase"));
 }
 
 KateCodeinfoPlugin::~KateCodeinfoPlugin()
 {
-  if (indexer.isRunning()) {
-    indexer.cancel();
-    indexer.wait();
-  }
-
-  db.saveToFile(KStandardDirs::locateLocal( "data", "kate/backtracedatabase"));
-
   s_self = 0L;
 }
 
@@ -84,31 +69,8 @@ Kate::PluginView *KateCodeinfoPlugin::createView (Kate::MainWindow *mainWindow)
   KateCodeinfoPluginView* pv = new KateCodeinfoPluginView (mainWindow);
   connect(this, SIGNAL(newStatus(const QString&)),
           pv, SLOT(setStatus(const QString&)));
-  pv->setStatus(i18n("Indexed files: %1", db.size()));
+  pv->setStatus(i18n("Ready"));
   return pv;
-}
-
-KateCodeinfoDatabase& KateCodeinfoPlugin::database()
-{
-  return db;
-}
-
-BtFileIndexer& KateCodeinfoPlugin::fileIndexer()
-{
-  return indexer;
-}
-
-void KateCodeinfoPlugin::startIndexer()
-{
-  if (indexer.isRunning()) {
-    indexer.cancel();
-    indexer.wait();
-  }
-  KConfigGroup cg(KGlobal::config(), "codeinfo");
-  indexer.setSearchPaths(cg.readEntry("search-folders", QStringList()));
-  indexer.setFilter(cg.readEntry("file-extensions", fileExtensions));
-  indexer.start();
-  emit newStatus(i18n("Indexing files..."));
 }
 
 uint KateCodeinfoPlugin::configPages () const
@@ -128,7 +90,7 @@ Kate::PluginConfigPage* KateCodeinfoPlugin::configPage(uint number, QWidget *par
 QString KateCodeinfoPlugin::configPageName (uint number) const
 {
   if (number == 0) {
-    return i18n("Backtrace Browser");
+    return i18n("Codeinfo");
   }
   return QString();
 }
@@ -155,18 +117,26 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
   : Kate::PluginView(mainWindow)
   , mw(mainWindow)
 {
-  toolView = mainWindow->createToolView("KatecodeinfoPlugin", Kate::MainWindow::Bottom, SmallIcon("kbugbuster"), i18n("Backtrace Browser"));
+  toolView = mainWindow->createToolView("KatecodeinfoPlugin", Kate::MainWindow::Bottom, SmallIcon("kbugbuster"), i18n("Codeinfo"));
   QWidget* w = new QWidget(toolView);
   setupUi(w);
   w->show();
+
+  KConfigGroup cg(KGlobal::config(), "codeinfo");
+  QString content;
+  QMap<QString, QString> entries = cg.entryMap();
+  cmbActions->clear();
+  foreach(QString key, entries.keys()) {
+      cmbActions->addItem(key, entries[key]);
+  }
 
   timer.setSingleShot(true);
   connect(&timer, SIGNAL(timeout()), this, SLOT(clearStatus()));
 
   connect(btnBacktrace, SIGNAL(clicked()), this, SLOT(loadFile()));
   connect(btnClipboard, SIGNAL(clicked()), this, SLOT(loadClipboard()));
-  connect(btnConfigure, SIGNAL(clicked()), this, SLOT(configure()));
-  connect(lstBacktrace, SIGNAL(itemActivated(QTreeWidgetItem*, int)), this, SLOT(itemActivated(QTreeWidgetItem*, int)));
+  connect(btnRun, SIGNAL(clicked()), this, SLOT(run()));
+  connect(lstCodeinfo, SIGNAL(itemActivated(QTreeWidgetItem*, int)), this, SLOT(itemActivated(QTreeWidgetItem*, int)));
 }
 
 KateCodeinfoPluginView::~KateCodeinfoPluginView ()
@@ -206,9 +176,9 @@ void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
 {
   QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci);
 
-  lstBacktrace->clear();
+  lstCodeinfo->clear();
   foreach (const CodeinfoInfo& info, infos) {
-    QTreeWidgetItem* it = new QTreeWidgetItem(lstBacktrace);
+    QTreeWidgetItem* it = new QTreeWidgetItem(lstCodeinfo);
 
     // File
     QFileInfo fi(info.filename);
@@ -231,14 +201,14 @@ void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
     it->setData(4, Qt::DisplayRole, info.message);
     it->setData(4, Qt::ToolTipRole, info.message);
 
-    lstBacktrace->addTopLevelItem(it);
+    lstCodeinfo->addTopLevelItem(it);
   }
-  lstBacktrace->resizeColumnToContents(0);
-  lstBacktrace->resizeColumnToContents(1);
-  lstBacktrace->resizeColumnToContents(2);
-  lstBacktrace->resizeColumnToContents(3);
+  lstCodeinfo->resizeColumnToContents(0);
+  lstCodeinfo->resizeColumnToContents(1);
+  lstCodeinfo->resizeColumnToContents(2);
+  lstCodeinfo->resizeColumnToContents(3);
 
-  if (lstBacktrace->topLevelItemCount()) {
+  if (lstCodeinfo->topLevelItemCount()) {
     setStatus(i18n("Loading codeinfo succeeded"));
   } else {
     setStatus(i18n("Loading codeinfo failed"));
@@ -246,10 +216,9 @@ void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
 }
 
 
-void KateCodeinfoPluginView::configure()
+void KateCodeinfoPluginView::run()
 {
-  KateCodeInfoConfigDialog dlg(mw->window());
-  dlg.exec();
+  // TODO: Put the run code here
 }
 
 void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
@@ -289,17 +258,17 @@ KateCodeInfoConfigWidget::KateCodeInfoConfigWidget(QWidget* parent, const char* 
   : Kate::PluginConfigPage(parent, name)
 {
   setupUi(this);
-  edtUrl->setMode(KFile::Directory);
-  edtUrl->setUrl(KUrl(QDir().absolutePath()));
 
   reset();
 
-  connect(btnAdd, SIGNAL(clicked()), this, SLOT(add()));
-  connect(btnRemove, SIGNAL(clicked()), this, SLOT(remove()));
-  connect(edtExtensions, SIGNAL(textChanged(const QString&)), this, SLOT(textChanged()));
-
+  connect(txtActions->document(), SIGNAL(contentsChanged()), this, SLOT(hasChanged()));
   m_changed = false;
 }
+
+void KateCodeInfoConfigWidget::hasChanged()
+ {
+     m_changed = true;
+ }
 
 KateCodeInfoConfigWidget::~KateCodeInfoConfigWidget()
 {
@@ -308,18 +277,25 @@ KateCodeInfoConfigWidget::~KateCodeInfoConfigWidget()
 void KateCodeInfoConfigWidget::apply()
 {
   if (m_changed) {
-    QStringList sl;
-    for (int i = 0; i < lstFolders->count(); ++i) {
-      sl << lstFolders->item(i)->data(Qt::DisplayRole).toString();
-    }
     KConfigGroup cg(KGlobal::config(), "codeinfo");
-    cg.writeEntry("search-folders", sl);
+    QMap<QString, QString> entries = cg.entryMap();
+    foreach(QString key, entries.keys()) {
+        cg.deleteEntry(key);
+    }
+    QStringList lines = txtActions->toPlainText().split("\n");
+    QStringList keyval;
 
-    QString filter = edtExtensions->text();
-    filter.replace(',', ' ').replace(';', ' ');
-    cg.writeEntry("file-extensions", filter.split(' ', QString::SkipEmptyParts));
+    // TODO: update combo
+    // cmbActions->clear();
+    foreach (QString line, lines) {
+      keyval = line.split(":");
+      if (keyval.count() > 1) {
+         cg.writeEntry(keyval[0], keyval[1]);
+         // TODO: update combo
+         // cmbActions->addItem(keyval[0], entries[key]);
+      }
+    }
 
-    KateCodeinfoPlugin::self().startIndexer();
     m_changed = false;
   }
 }
@@ -327,54 +303,27 @@ void KateCodeInfoConfigWidget::apply()
 void KateCodeInfoConfigWidget::reset()
 {
   KConfigGroup cg(KGlobal::config(), "codeinfo");
-  lstFolders->clear();
-  lstFolders->addItems(cg.readEntry("search-folders", QStringList()));
-  edtExtensions->setText(cg.readEntry("file-extensions", fileExtensions).join(" "));
+  QString content;
+  QMap<QString, QString> entries = cg.entryMap();
+  foreach(QString key, entries.keys()) {
+      content += key + ":" + entries[key] + "\n";
+  }
+  txtActions->setPlainText(content);
 }
 
 void KateCodeInfoConfigWidget::defaults()
 {
-  lstFolders->clear();
-  edtExtensions->setText(fileExtensions.join(" "));
+  // TODO
 
   m_changed = true;
 }
-
-void KateCodeInfoConfigWidget::add()
-{
-  QDir url(edtUrl->lineEdit()->text());
-  if (url.exists())
-  if (lstFolders->findItems(url.absolutePath(), Qt::MatchExactly).size() == 0) {
-    lstFolders->addItem(url.absolutePath());
-    emit changed();
-    m_changed = true;
-  }
-}
-
-void KateCodeInfoConfigWidget::remove()
-{
-  QListWidgetItem* item = lstFolders->currentItem();
-  if (item) {
-    delete item;
-    emit changed();
-    m_changed = true;
-  }
-}
-
-void KateCodeInfoConfigWidget::textChanged()
-{
-  emit changed();
-  m_changed = true;
-}
-
-
 
 
 
 KateCodeInfoConfigDialog::KateCodeInfoConfigDialog(QWidget* parent)
   : KDialog(parent)
 {
-  setCaption(i18n("Backtrace Browser Settings"));
+  setCaption(i18n("Codeinfo Settings"));
   setButtons(KDialog::Ok | KDialog::Cancel);
 
   m_configWidget = new KateCodeInfoConfigWidget(this, "kate_bt_config_widget");

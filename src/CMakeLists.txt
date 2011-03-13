@@ -15,8 +15,6 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR} ${KDE4_INCLUDES})
 set(katecodeinfoplugin_PART_SRCS
     katecodeinfo.cpp
     codeinfoparser.cpp
-    btfileindexer.cpp
-    codeinfodatabase.cpp
 )
 set(katecodeinfoplugin_PART_UI
     codeinfowidget.ui

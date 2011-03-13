@@ -27,8 +27,6 @@
 
 #include "ui_codeinfowidget.h"
 #include "ui_codeinfoconfigwidget.h"
-#include "codeinfodatabase.h"
-#include "btfileindexer.h"
 
 #include <QString>
 #include <QTimer>
@@ -44,11 +42,6 @@ class KateCodeinfoPlugin: public Kate::Plugin, public Kate::PluginConfigPageInte
     static KateCodeinfoPlugin& self();
 
     Kate::PluginView *createView (Kate::MainWindow *mainWindow);
-
-    KateCodeinfoDatabase& database();
-    BtFileIndexer& fileIndexer();
-
-    void startIndexer();
 
   signals:
     void newStatus(const QString&);
@@ -67,8 +60,6 @@ class KateCodeinfoPlugin: public Kate::Plugin, public Kate::PluginConfigPageInte
   // private data
   //
   private:
-    KateCodeinfoDatabase db;
-    BtFileIndexer indexer;
     static KateCodeinfoPlugin* s_self;
 };
 
@@ -89,7 +80,7 @@ class KateCodeinfoPluginView : public Kate::PluginView, public Ui::CodeinfoWidge
   public slots:
     void loadFile();
     void loadClipboard();
-    void configure();
+    void run();
     void clearStatus();
     void setStatus(const QString& status);
 
@@ -115,9 +106,7 @@ class KateCodeInfoConfigWidget : public Kate::PluginConfigPage, private Ui::Code
     virtual void defaults();
 
   private slots:
-    void add();
-    void remove();
-    void textChanged();
+    virtual void hasChanged();
 
   private:
     bool m_changed;
