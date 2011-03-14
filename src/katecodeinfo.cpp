@@ -42,7 +42,7 @@
 //END Includes
 
 K_PLUGIN_FACTORY(KatecodeinfoFactory, registerPlugin<KateCodeinfoPlugin>();)
-K_EXPORT_PLUGIN(KatecodeinfoFactory(KAboutData("katecodeinfoplugin","katecodeinfoplugin",ki18n("Backtrace Browser"), "0.1", ki18n("Browsing backtraces"), KAboutData::License_LGPL_V2)) )
+K_EXPORT_PLUGIN(KatecodeinfoFactory(KAboutData("katecodeinfoplugin","katecodeinfoplugin",ki18n("Codeinfo"), "0.1", ki18n("Codeinfo"), KAboutData::License_LGPL_V2)) )
 
 
 KateCodeinfoPlugin* KateCodeinfoPlugin::s_self = 0L;
@@ -106,7 +106,7 @@ QString KateCodeinfoPlugin::configPageFullName (uint number) const
 KIcon KateCodeinfoPlugin::configPageIcon (uint number) const
 {
   Q_UNUSED(number)
-  return KIcon("kbugbuster");
+  return KIcon("msg_info");
 }
 
 
@@ -117,7 +117,7 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
   : Kate::PluginView(mainWindow)
   , mw(mainWindow)
 {
-  toolView = mainWindow->createToolView("KatecodeinfoPlugin", Kate::MainWindow::Bottom, SmallIcon("kbugbuster"), i18n("Codeinfo"));
+  toolView = mainWindow->createToolView("KatecodeinfoPlugin", Kate::MainWindow::Bottom, SmallIcon("msg_info"), i18n("Codeinfo"));
   QWidget* w = new QWidget(toolView);
   setupUi(w);
   w->show();
@@ -158,21 +158,21 @@ void KateCodeinfoPluginView::writeSessionConfig(KConfigBase* config, const QStri
 
 void KateCodeinfoPluginView::loadFile()
 {
-  QString url = KFileDialog::getOpenFileName(KUrl(), QString(), mw->window(), i18n("Load Codeinfo"));
+  QString url = KFileDialog::getOpenFileName(KUrl(), QString(), mw->window(), i18n("Load file"));
   QFile f(url);
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QString str = f.readAll();
-    loadBacktrace(str);
+    loadCodeinfo(str);
   }
 }
 
 void KateCodeinfoPluginView::loadClipboard()
 {
   QString ci = QApplication::clipboard()->text();
-  loadBacktrace(ci);
+  loadCodeinfo(ci);
 }
 
-void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
+void KateCodeinfoPluginView::loadCodeinfo(const QString& ci)
 {
   QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci);
 
@@ -219,6 +219,8 @@ void KateCodeinfoPluginView::loadBacktrace(const QString& ci)
 void KateCodeinfoPluginView::run()
 {
   // TODO: Put the run code here
+  QString action = cmbActions->itemData(cmbActions->currentIndex()).toString();
+  execute(action);
 }
 
 void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
@@ -232,7 +234,13 @@ void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
   if (!path.isEmpty() && QFile::exists(path)) {
     KUrl url(path);
     KTextEditor::View* kv = mw->openUrl(url);
-    kv->setCursorPosition(KTextEditor::Cursor(line - 1, col));
+    if (line > 0) {
+        kv->setCursorPosition(KTextEditor::Cursor(line - 1, col-1));
+    } else {
+        // Line = 0 is used to show information about a file.
+        // Just go to the beginning.
+        kv->setCursorPosition(KTextEditor::Cursor(0, 0));
+    }
     kv->setFocus();
     setStatus(i18n("Opened file: %1", path));
   } else {
@@ -249,6 +257,54 @@ void KateCodeinfoPluginView::setStatus(const QString& status)
 void KateCodeinfoPluginView::clearStatus()
 {
   lblStatus->setText(QString());
+}
+
+void KateCodeinfoPluginView::execute(const QString &command)
+{
+    btnRun->setDisabled(true);
+
+    m_proc = new KProcess(this);
+    m_proc->setShellCommand(command);
+    m_proc->setOutputChannelMode(KProcess::MergedChannels);
+    m_proc->setReadChannel(QProcess::StandardOutput);
+
+    connect(m_proc, SIGNAL(readyReadStandardOutput()),
+                                    this, SLOT(processOutput()));
+    connect(m_proc, SIGNAL(readyReadStandardError()),
+                                    this, SLOT(processOutput()));
+    connect(m_proc, SIGNAL(finished(int, QProcess::ExitStatus)),
+                                    this, SLOT(processExited(int, QProcess::ExitStatus)));
+
+    m_output = "";
+    kDebug() << "   execute '" << command << "'";
+
+    m_proc->start();
+    setStatus("Running " +  cmbActions->currentText());
+}
+
+// get all output of identify
+
+void KateCodeinfoPluginView::processOutput()
+{
+    m_output += m_proc->readAll();
+}
+
+// identify was called
+
+void KateCodeinfoPluginView::processExited(int /* exitCode */, QProcess::ExitStatus exitStatus)
+{
+
+    if (exitStatus == QProcess::NormalExit) {
+        kDebug() << "   result: " << m_output;
+
+        // analyze the result at m_output
+        loadCodeinfo(m_output);
+
+        setStatus("Finished running " +  cmbActions->currentText());
+    } else {
+        setStatus("Error while running " +  cmbActions->currentText());
+    }
+    btnRun->setDisabled(false);
 }
 
 

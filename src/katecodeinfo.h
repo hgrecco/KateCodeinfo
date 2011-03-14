@@ -31,6 +31,8 @@
 #include <QString>
 #include <QTimer>
 
+#include <KProcess>
+
 class KateCodeinfoPlugin: public Kate::Plugin, public Kate::PluginConfigPageInterface
 {
     Q_OBJECT
@@ -75,7 +77,7 @@ class KateCodeinfoPluginView : public Kate::PluginView, public Ui::CodeinfoWidge
     virtual void readSessionConfig (KConfigBase* config, const QString& groupPrefix);
     virtual void writeSessionConfig (KConfigBase* config, const QString& groupPrefix);
 
-    void loadBacktrace(const QString& bt);
+    void loadCodeinfo(const QString& bt);
 
   public slots:
     void loadFile();
@@ -86,11 +88,18 @@ class KateCodeinfoPluginView : public Kate::PluginView, public Ui::CodeinfoWidge
 
   private slots:
     void itemActivated(QTreeWidgetItem* item, int column);
+    void processOutput();
+    void processExited(int exitCode, QProcess::ExitStatus exitStatus);
 
   private:
     QWidget* toolView;
     Kate::MainWindow* mw;
     QTimer timer;
+    QString m_output;
+
+    KProcess* m_proc;
+
+    void execute(const QString &command);
 };
 
 class KateCodeInfoConfigWidget : public Kate::PluginConfigPage, private Ui::CodeinfoConfigWidget
