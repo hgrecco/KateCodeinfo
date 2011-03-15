@@ -36,22 +36,30 @@ static QString eolDelimiter(const QString& str)
     return separator;
 }
 
-static CodeinfoInfo parseCodeinfoLine(const QString& line, const QString& regex)
+static CodeinfoInfo parseCodeinfoLine(const QString& line, const QRegExp& reg, const QHash<QString, int>& order)
 {
     // the syntax types we support are
     // filename \t line number \t column number \t code \t message
-    kDebug() << regex ;
-    static QRegExp reg(regex);
-    reg.setPatternSyntax(QRegExp::RegExp2);
     int index = reg.indexIn(line);
+    QHash<QString, int>::const_iterator el;
     kDebug() << index;
     if (index > -1) {
         CodeinfoInfo info;
-        info.filename = reg.cap(1);
-        info.line = reg.cap(2).toInt();
-        info.col = reg.cap(3).toInt();
-        info.code = reg.cap(4);
-        info.message = reg.cap(5);
+        if ((el = order.find("filename")) != order.end()) {
+            info.filename = reg.cap(el.value());
+        }
+        if ((el = order.find("line")) != order.end()) {
+            info.line = reg.cap(el.value()).toInt();
+        }
+        if ((el = order.find("col")) != order.end()) {
+            info.col = reg.cap(el.value()).toInt();
+        }
+        if ((el = order.find("code")) != order.end()) {
+            info.code = reg.cap(el.value());
+        }
+        if ((el = order.find("message")) != order.end()) {
+            info.message = reg.cap(el.value());
+        }
         return info;
     }
     kDebug() << "Unknown codeinfo line:" << line;
@@ -61,13 +69,33 @@ static CodeinfoInfo parseCodeinfoLine(const QString& line, const QString& regex)
     return info;
 }
 
-QList<CodeinfoInfo>  KateCodeinfoParser::parseCodeinfo(const QString& ci, const QString& regex)
+QList<CodeinfoInfo>  KateCodeinfoParser::parseCodeinfo(const QString& ci, QString regex)
 {
     QStringList l = ci.split(eolDelimiter(ci), QString::SkipEmptyParts);
 
+    QHash<QString, int> order;
+    QRegExp named("\\(P<([^<]*)>");
+    kDebug() << "Regex before name transformation: " << regex;
+    int pos = 0;
+    int count = 0;
+    while (pos >= 0) {
+        pos = named.indexIn(regex, pos);
+        if (pos >= 0) {
+            pos += named.matchedLength();
+            order[named.cap(1)] = ++count;
+        }
+    }
+    kDebug() << "Name transformation: " << order;
+    regex.replace(named, "(");
+    kDebug() << "Regex after name transformation: " << regex;
+    kDebug() << regex;
+
+    QRegExp reg(regex);
+    reg.setPatternSyntax(QRegExp::RegExp2);
+
     QList<CodeinfoInfo> results;
     for (int i = 0; i < l.size(); ++i) {
-        CodeinfoInfo info = parseCodeinfoLine(l[i], regex);
+        CodeinfoInfo info = parseCodeinfoLine(l[i], reg, order);
         if (info.line >= 0) {
             results.append(info);
         }

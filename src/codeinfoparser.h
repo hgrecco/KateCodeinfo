@@ -36,7 +36,7 @@ class CodeinfoInfo
 
 namespace KateCodeinfoParser {
 
-QList<CodeinfoInfo> parseCodeinfo(const QString& ci, const QString& regex);
+QList<CodeinfoInfo> parseCodeinfo(const QString& ci, QString regex);
 
 }
 
