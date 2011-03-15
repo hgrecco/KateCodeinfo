@@ -328,7 +328,7 @@ KateCodeInfoConfigWidget::KateCodeInfoConfigWidget(QWidget* parent, const char* 
   connect(tblActions, SIGNAL(itemChanged(QTableWidgetItem *)), this, SLOT(itemChanged(QTableWidgetItem *)));
 
   btnRemove->setDisabled((tblActions->rowCount()) == 0);
-  currentCellChanged(tblActions->currentRow());
+  currentCellChanged(tblActions->currentRow(), 0, 0, 0);
   m_changed = false;
 }
 

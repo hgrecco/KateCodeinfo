@@ -26,7 +26,7 @@ class CodeinfoInfo
 {
 
   public:
-    CodeinfoInfo():line(-1),col(-1){};
+    CodeinfoInfo():filename(""),code(""),message(""),line(0),col(0){};
     QString filename;
     QString code;
     QString message;

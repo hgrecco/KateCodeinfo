@@ -19,60 +19,61 @@
 #include "codeinfoparser.h"
 
 #include <QStringList>
+#include <QRegExp>
+#include <QHash>
 
 #include <kdebug.h>
 
 static QString eolDelimiter(const QString& str)
 {
-  // find the split character
-  QString separator('\n');
-  if (str.indexOf("\r\n") != -1) {
-    separator = "\r\n";
-  } else if (str.indexOf('\r') != -1 ) {
-    separator = '\r';
-  }
-  return separator;
+    // find the split character
+    QString separator('\n');
+    if (str.indexOf("\r\n") != -1) {
+        separator = "\r\n";
+    } else if (str.indexOf('\r') != -1 ) {
+        separator = '\r';
+    }
+    return separator;
 }
 
 static CodeinfoInfo parseCodeinfoLine(const QString& line, const QString& regex)
 {
-  // the syntax types we support are
-  // filename \t line number \t column number \t code \t message
-  kDebug() << regex ;
-  QStringList parsed = line.split("\t");
-  if (parsed.count() > 4) {
-    CodeinfoInfo info;
-    info.filename = parsed[0];
-    info.line = parsed[1].toInt();
-    info.col = parsed[2].toInt();
-    info.code = parsed[3];
-    for (int i=4; i<parsed.count(); i++) {
-        info.message.append(parsed[i]);
+    // the syntax types we support are
+    // filename \t line number \t column number \t code \t message
+    kDebug() << regex ;
+    static QRegExp reg(regex);
+    reg.setPatternSyntax(QRegExp::RegExp2);
+    int index = reg.indexIn(line);
+    kDebug() << index;
+    if (index > -1) {
+        CodeinfoInfo info;
+        info.filename = reg.cap(1);
+        info.line = reg.cap(2).toInt();
+        info.col = reg.cap(3).toInt();
+        info.code = reg.cap(4);
+        info.message = reg.cap(5);
+        return info;
     }
+    kDebug() << "Unknown codeinfo line:" << line;
+
+    CodeinfoInfo info;
+    info.line = -1;
     return info;
-  }
-
-  kDebug() << "Unknown codeinfo line:" << line;
-
-  CodeinfoInfo info;
-  return info;
 }
 
 QList<CodeinfoInfo>  KateCodeinfoParser::parseCodeinfo(const QString& ci, const QString& regex)
 {
-  QStringList l = ci.split(eolDelimiter(ci), QString::SkipEmptyParts);
+    QStringList l = ci.split(eolDelimiter(ci), QString::SkipEmptyParts);
 
-  //l = normalizeBt(l);
-
-  QList<CodeinfoInfo> results;
-  for (int i = 0; i < l.size(); ++i) {
-    CodeinfoInfo info = parseCodeinfoLine(l[i], regex);
-    if (info.line >= 0) {
-      results.append(info);
+    QList<CodeinfoInfo> results;
+    for (int i = 0; i < l.size(); ++i) {
+        CodeinfoInfo info = parseCodeinfoLine(l[i], regex);
+        if (info.line >= 0) {
+            results.append(info);
+        }
     }
-  }
 
-  return results;
+    return results;
 }
 
 // kate: space-indent on; indent-width 2; replace-tabs on;
