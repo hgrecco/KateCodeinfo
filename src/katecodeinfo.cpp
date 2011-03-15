@@ -44,7 +44,6 @@
 K_PLUGIN_FACTORY(KatecodeinfoFactory, registerPlugin<KateCodeinfoPlugin>();)
 K_EXPORT_PLUGIN(KatecodeinfoFactory(KAboutData("katecodeinfoplugin","katecodeinfoplugin",ki18n("Codeinfo"), "0.1", ki18n("Codeinfo"), KAboutData::License_LGPL_V2)) )
 
-
 KateCodeinfoPlugin* KateCodeinfoPlugin::s_self = 0L;
 
 KateCodeinfoPlugin::KateCodeinfoPlugin( QObject* parent, const QList<QVariant>&)
@@ -69,7 +68,6 @@ Kate::PluginView *KateCodeinfoPlugin::createView (Kate::MainWindow *mainWindow)
   KateCodeinfoPluginView* pv = new KateCodeinfoPluginView (mainWindow);
   connect(this, SIGNAL(newStatus(const QString&)),
           pv, SLOT(setStatus(const QString&)));
-  pv->setStatus(i18n("Ready"));
   return pv;
 }
 
@@ -81,7 +79,7 @@ uint KateCodeinfoPlugin::configPages () const
 Kate::PluginConfigPage* KateCodeinfoPlugin::configPage(uint number, QWidget *parent, const char *name)
 {
   if (number == 0) {
-    return new KateCodeInfoConfigWidget(parent, name);
+    return new KateCodeinfoConfigWidget(parent, name);
   }
 
   return 0L;
@@ -119,24 +117,26 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
 {
   toolView = mainWindow->createToolView("KatecodeinfoPlugin", Kate::MainWindow::Bottom, SmallIcon("msg_info"), i18n("Codeinfo"));
   QWidget* w = new QWidget(toolView);
-  setupUi(w);
+  setupUi(w);  
   w->show();
 
-  KConfigGroup cg(KGlobal::config(), "codeinfo");
-  QString content;
-  QMap<QString, QString> entries = cg.entryMap();
   cmbActions->clear();
-  foreach(QString key, entries.keys()) {
-      cmbActions->addItem(key, entries[key]);
+  cmbActions->addItem("Get all :-)");
+  foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
+    cmbActions->addItem(key);
   }
 
   timer.setSingleShot(true);
   connect(&timer, SIGNAL(timeout()), this, SLOT(clearStatus()));
 
-  connect(btnBacktrace, SIGNAL(clicked()), this, SLOT(loadFile()));
+  connect(btnFile, SIGNAL(clicked()), this, SLOT(loadFile()));
   connect(btnClipboard, SIGNAL(clicked()), this, SLOT(loadClipboard()));
   connect(btnRun, SIGNAL(clicked()), this, SLOT(run()));
   connect(lstCodeinfo, SIGNAL(itemActivated(QTreeWidgetItem*, int)), this, SLOT(itemActivated(QTreeWidgetItem*, int)));
+  connect(cmbActions, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(cmbChanged(const QString &)));
+
+  // TODO This is not updating
+  cmbActions->setCurrentIndex(0);
 }
 
 KateCodeinfoPluginView::~KateCodeinfoPluginView ()
@@ -146,37 +146,54 @@ KateCodeinfoPluginView::~KateCodeinfoPluginView ()
 
 void KateCodeinfoPluginView::readSessionConfig(KConfigBase* config, const QString& group)
 {
-    Q_UNUSED(config);
-    Q_UNUSED(group);
+  Q_UNUSED(config);
+  Q_UNUSED(group);
 }
 
 void KateCodeinfoPluginView::writeSessionConfig(KConfigBase* config, const QString& group)
 {
-    Q_UNUSED(config);
-    Q_UNUSED(group);
+  Q_UNUSED(config);
+  Q_UNUSED(group);
+}
+
+void KateCodeinfoPluginView::cmbChanged(const QString & text)
+{
+  if (text == "Get all :-)") {
+    txtCommand->setText("");
+    m_regex = "(P<message>.*)";
+  } else {
+    QList<QString> list = KConfigGroup(KGlobal::config(), "codeinfo").readEntry(text, QList<QString>());
+    txtCommand->setText(list[0]);
+    m_regex = list[1];
+    kDebug() << text << " " << list[0] << " " << list[1];
+  }
 }
 
 void KateCodeinfoPluginView::loadFile()
 {
-  QStringList actionRegex = cmbActions->itemData(cmbActions->currentIndex()).toString().split('\n');
   QString url = KFileDialog::getOpenFileName(KUrl(), QString(), mw->window(), i18n("Load file"));
   QFile f(url);
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QString str = f.readAll();
-    loadCodeinfo(str, actionRegex[1]);
-  }
+    loadCodeinfo(str);
+  }}
+
+
+void KateCodeinfoPluginView::run()
+{
+  // TODO: Put the run code here
+  execute(txtCommand->text());
 }
 
 void KateCodeinfoPluginView::loadClipboard()
 {
   QString ci = QApplication::clipboard()->text();
-  QStringList actionRegex = cmbActions->itemData(cmbActions->currentIndex()).toString().split('\n');
-  loadCodeinfo(ci, actionRegex[1]);
+  loadCodeinfo(ci);
 }
 
-void KateCodeinfoPluginView::loadCodeinfo(const QString& ci, const QString& regex)
+void KateCodeinfoPluginView::loadCodeinfo(const QString& ci)
 {
-  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci, regex);
+  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci, m_regex);
 
   lstCodeinfo->clear();
   foreach (const CodeinfoInfo& info, infos) {
@@ -210,19 +227,9 @@ void KateCodeinfoPluginView::loadCodeinfo(const QString& ci, const QString& rege
   lstCodeinfo->resizeColumnToContents(2);
   lstCodeinfo->resizeColumnToContents(3);
 
-  if (lstCodeinfo->topLevelItemCount()) {
-    setStatus(i18n("Loading codeinfo succeeded"));
-  } else {
+  if (!(lstCodeinfo->topLevelItemCount())) {
     setStatus(i18n("Loading codeinfo failed"));
   }
-}
-
-
-void KateCodeinfoPluginView::run()
-{
-  // TODO: Put the run code here
-  QStringList actionRegex = cmbActions->itemData(cmbActions->currentIndex()).toString().split('\n');
-  execute(actionRegex[0], actionRegex[1]);
 }
 
 void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
@@ -237,14 +244,14 @@ void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
     KUrl url(path);
     KTextEditor::View* kv = mw->openUrl(url);
     if (line > 0) {
-        kv->setCursorPosition(KTextEditor::Cursor(line - 1, col-1));
+      kv->setCursorPosition(KTextEditor::Cursor(line - 1, col-1));
     } else {
-        // Line = 0 is used to show information about a file.
-        // Just go to the beginning.
-        kv->setCursorPosition(KTextEditor::Cursor(0, 0));
+      // Line = 0 is used to show information about a file.
+      // Just go to the beginning.
+      kv->setCursorPosition(KTextEditor::Cursor(0, 0));
     }
     kv->setFocus();
-    setStatus(i18n("Opened file: %1", path));
+    kDebug() << "Opened file: " << path;
   } else {
     setStatus(i18n("File not found: %1", path));
   }
@@ -252,44 +259,45 @@ void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
 
 void KateCodeinfoPluginView::setStatus(const QString& status)
 {
-  lblStatus->setText(status);
-  timer.start(10*1000);
+  lstCodeinfo->clear();
+  QTreeWidgetItem* it = new QTreeWidgetItem(lstCodeinfo);
+  it->setData(0, Qt::DisplayRole, "");
+  it->setData(1, Qt::DisplayRole, QString::number(-1));
+  it->setData(2, Qt::DisplayRole, QString::number(0));
+  it->setData(3, Qt::DisplayRole, "");
+  it->setData(4, Qt::DisplayRole, status);
+  lstCodeinfo->addTopLevelItem(it);
+  lstCodeinfo->resizeColumnToContents(4);
 }
 
-void KateCodeinfoPluginView::clearStatus()
+void KateCodeinfoPluginView::execute(const QString &command)
 {
-  lblStatus->setText(QString());
-}
+  btnRun->setDisabled(true);
 
-void KateCodeinfoPluginView::execute(const QString &command, const QString &regex)
-{
-    btnRun->setDisabled(true);
+  m_proc = new KProcess(this);
+  m_proc->setShellCommand(command);
+  m_proc->setOutputChannelMode(KProcess::MergedChannels);
+  m_proc->setReadChannel(QProcess::StandardOutput);
 
-    m_proc = new KProcess(this);
-    m_proc->setShellCommand(command);
-    m_proc->setOutputChannelMode(KProcess::MergedChannels);
-    m_proc->setReadChannel(QProcess::StandardOutput);
+  connect(m_proc, SIGNAL(readyReadStandardOutput()),
+          this, SLOT(processOutput()));
+  connect(m_proc, SIGNAL(readyReadStandardError()),
+          this, SLOT(processOutput()));
+  connect(m_proc, SIGNAL(finished(int, QProcess::ExitStatus)),
+          this, SLOT(processExited(int, QProcess::ExitStatus)));
 
-    connect(m_proc, SIGNAL(readyReadStandardOutput()),
-                                    this, SLOT(processOutput()));
-    connect(m_proc, SIGNAL(readyReadStandardError()),
-                                    this, SLOT(processOutput()));
-    connect(m_proc, SIGNAL(finished(int, QProcess::ExitStatus)),
-                                    this, SLOT(processExited(int, QProcess::ExitStatus)));
+  m_output = "";
+  kDebug() << "   execute '" << command << "'";
 
-    m_output = "";
-    m_regex = regex;
-    kDebug() << "   execute '" << command << "'";
-
-    m_proc->start();
-    setStatus("Running " +  cmbActions->currentText());
+  m_proc->start();
+  setStatus("Running " +  cmbActions->currentText());
 }
 
 // get all output of identify
 
 void KateCodeinfoPluginView::processOutput()
 {
-    m_output += m_proc->readAll();
+  m_output += m_proc->readAll();
 }
 
 // identify was called
@@ -297,26 +305,29 @@ void KateCodeinfoPluginView::processOutput()
 void KateCodeinfoPluginView::processExited(int /* exitCode */, QProcess::ExitStatus exitStatus)
 {
 
-    if (exitStatus == QProcess::NormalExit) {
-        kDebug() << "   result: " << m_output;
+  if (exitStatus == QProcess::NormalExit) {
+    kDebug() << "   result: " << m_output;
 
-        // analyze the result at m_output
-        loadCodeinfo(m_output, m_regex);
+    // analyze the result at m_output
+    loadCodeinfo(m_output);
 
-        setStatus("Finished running " +  cmbActions->currentText());
-    } else {
-        setStatus("Error while running " +  cmbActions->currentText());
-    }
-    btnRun->setDisabled(false);
+  } else {
+    setStatus("Error while running " +  cmbActions->currentText());
+  }
+  btnRun->setDisabled(false);
 }
 
 
 
 
-KateCodeInfoConfigWidget::KateCodeInfoConfigWidget(QWidget* parent, const char* name)
+KateCodeinfoConfigWidget::KateCodeinfoConfigWidget(QWidget* parent, const char* name)
   : Kate::PluginConfigPage(parent, name)
 {
   setupUi(this);
+  btnUp->setIcon( KIcon("arrow-up"));
+  btnDown->setIcon( KIcon("arrow-down"));
+  btnAdd->setIcon( KIcon("list-add"));
+  btnRemove->setIcon( KIcon("list-remove"));
 
   reset();
 
@@ -332,116 +343,111 @@ KateCodeInfoConfigWidget::KateCodeInfoConfigWidget(QWidget* parent, const char* 
   m_changed = false;
 }
 
-void KateCodeInfoConfigWidget::addItem(QString& name, QString& command, QString& regex) {
-    int row = tblActions->currentRow() + 1;
-    tblActions->insertRow(row);
-    tblActions->setItem(row, 0, new QTableWidgetItem(name));
-    tblActions->setItem(row, 1, new QTableWidgetItem(command));
-    tblActions->setItem(row, 2, new QTableWidgetItem(regex));
-    tblActions->resizeColumnsToContents();
-    tblActions->setCurrentCell(row, 0);
-    btnRemove->setDisabled(false);
+void KateCodeinfoConfigWidget::addItem(QString& name, QString& command, QString& regex) {
+  int row = tblActions->currentRow() + 1;
+  tblActions->insertRow(row);
+  tblActions->setItem(row, 0, new QTableWidgetItem(name));
+  tblActions->setItem(row, 1, new QTableWidgetItem(command));
+  tblActions->setItem(row, 2, new QTableWidgetItem(regex));
+  tblActions->resizeColumnsToContents();
+  tblActions->setCurrentCell(row, 0);
+  btnRemove->setDisabled(false);
 }
 
-void KateCodeInfoConfigWidget::add()
+void KateCodeinfoConfigWidget::add()
 {
-    QString empty = "";
-    addItem(empty, empty, empty);
+  QString empty = "";
+  addItem(empty, empty, empty);
 }
 
-void KateCodeInfoConfigWidget::remove()
+void KateCodeinfoConfigWidget::remove()
 {
-    tblActions->removeRow(tblActions->currentRow());
-    btnRemove->setDisabled((tblActions->rowCount()) == 0);
+  tblActions->removeRow(tblActions->currentRow());
+  btnRemove->setDisabled((tblActions->rowCount()) == 0);
 }
 
-void KateCodeInfoConfigWidget::swapRows(int from, int to)
+void KateCodeinfoConfigWidget::swapRows(int from, int to)
 {
-    bool se = tblActions->isSortingEnabled();
-    QTableWidgetItem* tmp;
-    for (int i=0; i<3; i++) {
-        tmp = tblActions->takeItem(from, i);
-        tblActions->setItem(from, i, tblActions->takeItem(to, i));
-        tblActions->setItem(to, i, tmp);
-    }
-    tblActions->selectRow(to);
-    tblActions->setSortingEnabled(se);
-    m_changed = true;
+  bool se = tblActions->isSortingEnabled();
+  QTableWidgetItem* tmp;
+  for (int i=0; i<3; i++) {
+    tmp = tblActions->takeItem(from, i);
+    tblActions->setItem(from, i, tblActions->takeItem(to, i));
+    tblActions->setItem(to, i, tmp);
+  }
+  tblActions->selectRow(to);
+  tblActions->setSortingEnabled(se);
+  m_changed = true;
 }
 
-void KateCodeInfoConfigWidget::down()
+void KateCodeinfoConfigWidget::down()
 {
-    swapRows(tblActions->currentRow(), tblActions->currentRow()+1);
+  swapRows(tblActions->currentRow(), tblActions->currentRow()+1);
 }
 
-void KateCodeInfoConfigWidget::up()
+void KateCodeinfoConfigWidget::up()
 {
-    swapRows(tblActions->currentRow(), tblActions->currentRow()-1);
+  swapRows(tblActions->currentRow(), tblActions->currentRow()-1);
 }
 
-void KateCodeInfoConfigWidget::currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn )
+void KateCodeinfoConfigWidget::currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn )
 {
-    Q_UNUSED(currentColumn);
-    Q_UNUSED(previousRow);
-    Q_UNUSED(previousColumn);
-    btnUp->setDisabled((currentRow == 0));
-    btnDown->setDisabled(currentRow == (tblActions->rowCount() - 1));
+  Q_UNUSED(currentColumn);
+  Q_UNUSED(previousRow);
+  Q_UNUSED(previousColumn);
+  btnUp->setDisabled((currentRow == 0));
+  btnDown->setDisabled(currentRow == (tblActions->rowCount() - 1));
 }
 
-void KateCodeInfoConfigWidget::hasChanged()
- {
-     m_changed = true;
- }
-
-void KateCodeInfoConfigWidget::itemChanged ( QTableWidgetItem * item )
+void KateCodeinfoConfigWidget::hasChanged()
 {
-    Q_UNUSED(item);
-    m_changed = true;
+  m_changed = true;
 }
 
-KateCodeInfoConfigWidget::~KateCodeInfoConfigWidget()
+void KateCodeinfoConfigWidget::itemChanged ( QTableWidgetItem * item )
+{
+  Q_UNUSED(item);
+  m_changed = true;
+}
+
+KateCodeinfoConfigWidget::~KateCodeinfoConfigWidget()
 {
 }
 
-void KateCodeInfoConfigWidget::apply()
+void KateCodeinfoConfigWidget::apply()
 {
   //TODO not here
   m_changed = true;
   if (m_changed) {
     KConfigGroup cg(KGlobal::config(), "codeinfo");
-    QMap<QString, QString> entries = cg.entryMap();
-    foreach(QString key, entries.keys()) {
-        cg.deleteEntry(key);
-    }
-
-    // TODO: update combo
+    foreach(QString key, cg.keyList()) {
+      cg.deleteEntry(key);
+    }    // TODO: update combo
     // cmbActions->clear();
+    QList<QString> list = QList<QString>();
     for (int i=0; i < (tblActions->rowCount()); i++)
-    {
-        cg.writeEntry(tblActions->item(i, 0)->text(),
-                      tblActions->item(i, 1)->text() + '\n' +
-                      tblActions->item(i, 2)->text());
-         // TODO: update combo
-         //cmbActions->addItem(keyval[0], entries[keyval[0]]);
+    {            
+      list.clear();
+      list.append(tblActions->item(i, 1)->text());
+      list.append(tblActions->item(i, 2)->text());
+      cg.writeEntry(tblActions->item(i, 0)->text(), list);
+      // TODO: update combo
+      //cmbActions->addItem(keyval[0], entries[keyval[0]]);
     }
     m_changed = false;
   }
 }
 
-void KateCodeInfoConfigWidget::reset()
+void KateCodeinfoConfigWidget::reset()
 {
-  KConfigGroup cg(KGlobal::config(), "codeinfo");
-  QString content;
-  QStringList split;
-  QMap<QString, QString> entries = cg.entryMap();
-  foreach(QString key, entries.keys()) {
-      content = entries[key];
-      split = content.split('\n');
-      addItem(key, split[0], split[1]);
+  QList<QString> list;
+  foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
+    list = KConfigGroup(KGlobal::config(), "codeinfo").readEntry(key, QList<QString>());
+    addItem(key, list[0], list[1]);
   }
 }
 
-void KateCodeInfoConfigWidget::defaults()
+void KateCodeinfoConfigWidget::defaults()
 {
   // TODO
 
@@ -450,13 +456,13 @@ void KateCodeInfoConfigWidget::defaults()
 
 
 
-KateCodeInfoConfigDialog::KateCodeInfoConfigDialog(QWidget* parent)
+KateCodeinfoConfigDialog::KateCodeinfoConfigDialog(QWidget* parent)
   : KDialog(parent)
 {
   setCaption(i18n("Codeinfo Settings"));
   setButtons(KDialog::Ok | KDialog::Cancel);
 
-  m_configWidget = new KateCodeInfoConfigWidget(this, "kate_bt_config_widget");
+  m_configWidget = new KateCodeinfoConfigWidget(this, "kate_bt_config_widget");
   setMainWidget(m_configWidget);
 
   connect(this, SIGNAL(applyClicked()), m_configWidget, SLOT(apply()));
@@ -464,13 +470,14 @@ KateCodeInfoConfigDialog::KateCodeInfoConfigDialog(QWidget* parent)
   connect(m_configWidget, SIGNAL(changed()), this, SLOT(changed()));
 }
 
-KateCodeInfoConfigDialog::~KateCodeInfoConfigDialog()
+KateCodeinfoConfigDialog::~KateCodeinfoConfigDialog()
 {
 }
 
-void KateCodeInfoConfigDialog::changed()
+void KateCodeinfoConfigDialog::changed()
 {
   enableButtonApply(true);
 }
+
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

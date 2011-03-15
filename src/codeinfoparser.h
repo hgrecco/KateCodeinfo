@@ -25,13 +25,13 @@
 class CodeinfoInfo
 {
 
-  public:
-    CodeinfoInfo():filename(""),code(""),message(""),line(0),col(0){};
-    QString filename;
-    QString code;
-    QString message;
-    int line;
-    int col;
+public:
+  CodeinfoInfo():filename(""),code(""),message(""),line(0),col(0){};
+  QString filename;
+  QString code;
+  QString message;
+  int line;
+  int col;
 };
 
 namespace KateCodeinfoParser {

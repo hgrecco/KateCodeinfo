@@ -35,115 +35,115 @@
 
 class KateCodeinfoPlugin: public Kate::Plugin, public Kate::PluginConfigPageInterface
 {
-    Q_OBJECT
-    Q_INTERFACES(Kate::PluginConfigPageInterface)
-  public:
-    explicit KateCodeinfoPlugin( QObject* parent = 0, const QList<QVariant>& = QList<QVariant>() );
-    virtual ~KateCodeinfoPlugin();
+  Q_OBJECT
+  Q_INTERFACES(Kate::PluginConfigPageInterface)
+public:
+  explicit KateCodeinfoPlugin( QObject* parent = 0, const QList<QVariant>& = QList<QVariant>() );
+  virtual ~KateCodeinfoPlugin();
 
-    static KateCodeinfoPlugin& self();
+  static KateCodeinfoPlugin& self();
 
-    Kate::PluginView *createView (Kate::MainWindow *mainWindow);
+  Kate::PluginView *createView (Kate::MainWindow *mainWindow);
 
-  signals:
-    void newStatus(const QString&);
+signals:
+  void newStatus(const QString&);
 
   //
   // PluginConfigPageInterface
   //
-  public:
-    virtual uint configPages() const;
-    virtual Kate::PluginConfigPage* configPage (uint number = 0, QWidget *parent = 0, const char *name = 0);
-    virtual QString configPageName(uint number = 0) const;
-    virtual QString configPageFullName(uint number = 0) const;
-    virtual KIcon configPageIcon(uint number = 0) const;
+public:
+  virtual uint configPages() const;
+  virtual Kate::PluginConfigPage* configPage (uint number = 0, QWidget *parent = 0, const char *name = 0);
+  virtual QString configPageName(uint number = 0) const;
+  virtual QString configPageFullName(uint number = 0) const;
+  virtual KIcon configPageIcon(uint number = 0) const;
 
   //
   // private data
   //
-  private:
-    static KateCodeinfoPlugin* s_self;
+private:
+  static KateCodeinfoPlugin* s_self;
 };
 
 class KateCodeinfoPluginView : public Kate::PluginView, public Ui::CodeinfoWidget
 {
-    Q_OBJECT
+  Q_OBJECT
 
-  public:
-    KateCodeinfoPluginView(Kate::MainWindow* mainWindow);
+public:
+  KateCodeinfoPluginView(Kate::MainWindow* mainWindow);
 
-    ~KateCodeinfoPluginView();
+  ~KateCodeinfoPluginView();
 
-    virtual void readSessionConfig (KConfigBase* config, const QString& groupPrefix);
-    virtual void writeSessionConfig (KConfigBase* config, const QString& groupPrefix);
+  virtual void readSessionConfig (KConfigBase* config, const QString& groupPrefix);
+  virtual void writeSessionConfig (KConfigBase* config, const QString& groupPrefix);
 
-    void loadCodeinfo(const QString& ci, const QString& regex);
+  void loadCodeinfo(const QString& ci);
 
-  public slots:
-    void loadFile();
-    void loadClipboard();
-    void run();
-    void clearStatus();
-    void setStatus(const QString& status);
+public slots:
+  void loadFile();
+  void loadClipboard();
+  void run();
+  void setStatus(const QString& status);
 
-  private slots:
-    void itemActivated(QTreeWidgetItem* item, int column);
-    void processOutput();
-    void processExited(int exitCode, QProcess::ExitStatus exitStatus);
-
-  private:
-    QWidget* toolView;
-    Kate::MainWindow* mw;
-    QTimer timer;
-    QString m_output;
-    QString m_regex;
-
-    KProcess* m_proc;
-
-    void execute(const QString &command, const QString& regex);
-};
-
-class KateCodeInfoConfigWidget : public Kate::PluginConfigPage, private Ui::CodeinfoConfigWidget
-{
-    Q_OBJECT
-  public:
-    explicit KateCodeInfoConfigWidget(QWidget* parent = 0, const char* name = 0);
-    virtual ~KateCodeInfoConfigWidget();
-
- public slots:
-    virtual void apply();
-    virtual void reset();
-    virtual void defaults();
-
-  private slots:
-    virtual void hasChanged();   
-    virtual void itemChanged(QTableWidgetItem *item);
-    virtual void add();
-    virtual void remove();
-    virtual void down();
-    virtual void up();
-    virtual void currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn );
-
-  private:
-    bool m_changed;
-
-    void addItem(QString& name, QString& command, QString& regex);
-
-    void swapRows(int from, int to);
-};
-
-class KateCodeInfoConfigDialog : public KDialog
-{
-    Q_OBJECT
-  public:
-    KateCodeInfoConfigDialog(QWidget* parent = 0);
-    ~KateCodeInfoConfigDialog();
-
-  public slots:
-    void changed();
+private slots:
+  void itemActivated(QTreeWidgetItem* item, int column);
+  void processOutput();
+  void processExited(int exitCode, QProcess::ExitStatus exitStatus);
+  void cmbChanged(const QString & text);
 
 private:
-    KateCodeInfoConfigWidget* m_configWidget;
+  QWidget* toolView;
+  Kate::MainWindow* mw;
+  QTimer timer;
+  QString m_output;
+  QString m_regex;
+
+  KProcess* m_proc;
+
+  void execute(const QString &command);
+};
+
+class KateCodeinfoConfigWidget : public Kate::PluginConfigPage, private Ui::CodeinfoConfigWidget
+{
+  Q_OBJECT
+public:
+  explicit KateCodeinfoConfigWidget(QWidget* parent = 0, const char* name = 0);
+  virtual ~KateCodeinfoConfigWidget();
+
+public slots:
+  virtual void apply();
+  virtual void reset();
+  virtual void defaults();
+
+private slots:
+  virtual void hasChanged();
+  virtual void itemChanged(QTableWidgetItem *item);
+  virtual void add();
+  virtual void remove();
+  virtual void down();
+  virtual void up();
+  virtual void currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn );
+
+private:
+  bool m_changed;
+
+  void addItem(QString& name, QString& command, QString& regex);
+
+  void swapRows(int from, int to);
+};
+
+class KateCodeinfoConfigDialog : public KDialog
+{
+  Q_OBJECT
+public:
+  KateCodeinfoConfigDialog(QWidget* parent = 0);
+  ~KateCodeinfoConfigDialog();
+
+public slots:
+  void changed();
+
+private:
+  KateCodeinfoConfigWidget* m_configWidget;
 };
 
 #endif //KATE_CODEINFO_H

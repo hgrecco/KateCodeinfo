@@ -61,20 +61,16 @@
    <item row="1" column="0">
     <layout class="QHBoxLayout">
      <item>
-      <widget class="QLabel" name="lblStatus">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer>
+      <spacer name="spacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>31</width>
+         <width>10</width>
          <height>20</height>
         </size>
        </property>
@@ -88,6 +84,22 @@
       </widget>
      </item>
      <item>
+      <widget class="QLineEdit" name="txtCommand">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="frame">
+        <bool>true</bool>
+       </property>
+       <property name="readOnly">
+        <bool>false</bool>
+       </property>
+       <property name="placeholderText">
+        <string>Enter command</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnRun">
        <property name="text">
         <string>Run</string>
@@ -95,7 +107,21 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer">
+      <widget class="QPushButton" name="btnClipboard">
+       <property name="text">
+        <string>Clipboard</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnFile">
+       <property name="text">
+        <string>File ...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="spacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -104,25 +130,11 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>40</width>
+         <width>10</width>
          <height>20</height>
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="btnClipboard">
-       <property name="text">
-        <string>Use Clipboard</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="btnBacktrace">
-       <property name="text">
-        <string>Load File...</string>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>
