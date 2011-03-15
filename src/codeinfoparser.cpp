@@ -34,11 +34,11 @@ static QString eolDelimiter(const QString& str)
   return separator;
 }
 
-static CodeinfoInfo parseCodeinfoLine(const QString& line)
+static CodeinfoInfo parseCodeinfoLine(const QString& line, const QString& regex)
 {
   // the syntax types we support are
   // filename \t line number \t column number \t code \t message
-
+  kDebug() << regex ;
   QStringList parsed = line.split("\t");
   if (parsed.count() > 4) {
     CodeinfoInfo info;
@@ -58,21 +58,21 @@ static CodeinfoInfo parseCodeinfoLine(const QString& line)
   return info;
 }
 
-QList<CodeinfoInfo>  KateCodeinfoParser::parseCodeinfo(const QString& ci)
+QList<CodeinfoInfo>  KateCodeinfoParser::parseCodeinfo(const QString& ci, const QString& regex)
 {
   QStringList l = ci.split(eolDelimiter(ci), QString::SkipEmptyParts);
 
   //l = normalizeBt(l);
 
-  QList<CodeinfoInfo> btList;
+  QList<CodeinfoInfo> results;
   for (int i = 0; i < l.size(); ++i) {
-    CodeinfoInfo info = parseCodeinfoLine(l[i]);
+    CodeinfoInfo info = parseCodeinfoLine(l[i], regex);
     if (info.line >= 0) {
-      btList.append(parseCodeinfoLine(l[i]));
+      results.append(info);
     }
   }
 
-  return btList;
+  return results;
 }
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

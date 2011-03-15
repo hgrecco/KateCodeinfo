@@ -158,23 +158,25 @@ void KateCodeinfoPluginView::writeSessionConfig(KConfigBase* config, const QStri
 
 void KateCodeinfoPluginView::loadFile()
 {
+  QStringList actionRegex = cmbActions->itemData(cmbActions->currentIndex()).toString().split('\n');
   QString url = KFileDialog::getOpenFileName(KUrl(), QString(), mw->window(), i18n("Load file"));
   QFile f(url);
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QString str = f.readAll();
-    loadCodeinfo(str);
+    loadCodeinfo(str, actionRegex[1]);
   }
 }
 
 void KateCodeinfoPluginView::loadClipboard()
 {
   QString ci = QApplication::clipboard()->text();
-  loadCodeinfo(ci);
+  QStringList actionRegex = cmbActions->itemData(cmbActions->currentIndex()).toString().split('\n');
+  loadCodeinfo(ci, actionRegex[1]);
 }
 
-void KateCodeinfoPluginView::loadCodeinfo(const QString& ci)
+void KateCodeinfoPluginView::loadCodeinfo(const QString& ci, const QString& regex)
 {
-  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci);
+  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci, regex);
 
   lstCodeinfo->clear();
   foreach (const CodeinfoInfo& info, infos) {
@@ -219,8 +221,8 @@ void KateCodeinfoPluginView::loadCodeinfo(const QString& ci)
 void KateCodeinfoPluginView::run()
 {
   // TODO: Put the run code here
-  QString action = cmbActions->itemData(cmbActions->currentIndex()).toString();
-  execute(action);
+  QStringList actionRegex = cmbActions->itemData(cmbActions->currentIndex()).toString().split('\n');
+  execute(actionRegex[0], actionRegex[1]);
 }
 
 void KateCodeinfoPluginView::itemActivated(QTreeWidgetItem* item, int column)
@@ -259,7 +261,7 @@ void KateCodeinfoPluginView::clearStatus()
   lblStatus->setText(QString());
 }
 
-void KateCodeinfoPluginView::execute(const QString &command)
+void KateCodeinfoPluginView::execute(const QString &command, const QString &regex)
 {
     btnRun->setDisabled(true);
 
@@ -276,6 +278,7 @@ void KateCodeinfoPluginView::execute(const QString &command)
                                     this, SLOT(processExited(int, QProcess::ExitStatus)));
 
     m_output = "";
+    m_regex = regex;
     kDebug() << "   execute '" << command << "'";
 
     m_proc->start();
@@ -298,7 +301,7 @@ void KateCodeinfoPluginView::processExited(int /* exitCode */, QProcess::ExitSta
         kDebug() << "   result: " << m_output;
 
         // analyze the result at m_output
-        loadCodeinfo(m_output);
+        loadCodeinfo(m_output, m_regex);
 
         setStatus("Finished running " +  cmbActions->currentText());
     } else {
@@ -317,8 +320,72 @@ KateCodeInfoConfigWidget::KateCodeInfoConfigWidget(QWidget* parent, const char* 
 
   reset();
 
-  connect(txtActions->document(), SIGNAL(contentsChanged()), this, SLOT(hasChanged()));
+  connect(btnAdd, SIGNAL(clicked()), this, SLOT(add()));
+  connect(btnRemove, SIGNAL(clicked()), this, SLOT(remove()));
+  connect(btnDown, SIGNAL(clicked()), this, SLOT(down()));
+  connect(btnUp, SIGNAL(clicked()), this, SLOT(up()));
+  connect(tblActions, SIGNAL(currentCellChanged(int, int, int, int)), this, SLOT(currentCellChanged(int, int, int, int)));
+  connect(tblActions, SIGNAL(itemChanged(QTableWidgetItem *)), this, SLOT(itemChanged(QTableWidgetItem *)));
+
+  btnRemove->setDisabled((tblActions->rowCount()) == 0);
+  currentCellChanged(tblActions->currentRow());
   m_changed = false;
+}
+
+void KateCodeInfoConfigWidget::addItem(QString& name, QString& command, QString& regex) {
+    int row = tblActions->currentRow() + 1;
+    tblActions->insertRow(row);
+    tblActions->setItem(row, 0, new QTableWidgetItem(name));
+    tblActions->setItem(row, 1, new QTableWidgetItem(command));
+    tblActions->setItem(row, 2, new QTableWidgetItem(regex));
+    tblActions->resizeColumnsToContents();
+    tblActions->setCurrentCell(row, 0);
+    btnRemove->setDisabled(false);
+}
+
+void KateCodeInfoConfigWidget::add()
+{
+    QString empty = "";
+    addItem(empty, empty, empty);
+}
+
+void KateCodeInfoConfigWidget::remove()
+{
+    tblActions->removeRow(tblActions->currentRow());
+    btnRemove->setDisabled((tblActions->rowCount()) == 0);
+}
+
+void KateCodeInfoConfigWidget::swapRows(int from, int to)
+{
+    bool se = tblActions->isSortingEnabled();
+    QTableWidgetItem* tmp;
+    for (int i=0; i<3; i++) {
+        tmp = tblActions->takeItem(from, i);
+        tblActions->setItem(from, i, tblActions->takeItem(to, i));
+        tblActions->setItem(to, i, tmp);
+    }
+    tblActions->selectRow(to);
+    tblActions->setSortingEnabled(se);
+    m_changed = true;
+}
+
+void KateCodeInfoConfigWidget::down()
+{
+    swapRows(tblActions->currentRow(), tblActions->currentRow()+1);
+}
+
+void KateCodeInfoConfigWidget::up()
+{
+    swapRows(tblActions->currentRow(), tblActions->currentRow()-1);
+}
+
+void KateCodeInfoConfigWidget::currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn )
+{
+    Q_UNUSED(currentColumn);
+    Q_UNUSED(previousRow);
+    Q_UNUSED(previousColumn);
+    btnUp->setDisabled((currentRow == 0));
+    btnDown->setDisabled(currentRow == (tblActions->rowCount() - 1));
 }
 
 void KateCodeInfoConfigWidget::hasChanged()
@@ -326,32 +393,37 @@ void KateCodeInfoConfigWidget::hasChanged()
      m_changed = true;
  }
 
+void KateCodeInfoConfigWidget::itemChanged ( QTableWidgetItem * item )
+{
+    Q_UNUSED(item);
+    m_changed = true;
+}
+
 KateCodeInfoConfigWidget::~KateCodeInfoConfigWidget()
 {
 }
 
 void KateCodeInfoConfigWidget::apply()
 {
+  //TODO not here
+  m_changed = true;
   if (m_changed) {
     KConfigGroup cg(KGlobal::config(), "codeinfo");
     QMap<QString, QString> entries = cg.entryMap();
     foreach(QString key, entries.keys()) {
         cg.deleteEntry(key);
     }
-    QStringList lines = txtActions->toPlainText().split("\n");
-    QStringList keyval;
 
     // TODO: update combo
     // cmbActions->clear();
-    foreach (QString line, lines) {
-      keyval = line.split(":");
-      if (keyval.count() > 1) {
-         cg.writeEntry(keyval[0], keyval[1]);
+    for (int i=0; i < (tblActions->rowCount()); i++)
+    {
+        cg.writeEntry(tblActions->item(i, 0)->text(),
+                      tblActions->item(i, 1)->text() + '\n' +
+                      tblActions->item(i, 2)->text());
          // TODO: update combo
-         // cmbActions->addItem(keyval[0], entries[key]);
-      }
+         //cmbActions->addItem(keyval[0], entries[keyval[0]]);
     }
-
     m_changed = false;
   }
 }
@@ -360,11 +432,13 @@ void KateCodeInfoConfigWidget::reset()
 {
   KConfigGroup cg(KGlobal::config(), "codeinfo");
   QString content;
+  QStringList split;
   QMap<QString, QString> entries = cg.entryMap();
   foreach(QString key, entries.keys()) {
-      content += key + ":" + entries[key] + "\n";
+      content = entries[key];
+      split = content.split('\n');
+      addItem(key, split[0], split[1]);
   }
-  txtActions->setPlainText(content);
 }
 
 void KateCodeInfoConfigWidget::defaults()

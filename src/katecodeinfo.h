@@ -77,7 +77,7 @@ class KateCodeinfoPluginView : public Kate::PluginView, public Ui::CodeinfoWidge
     virtual void readSessionConfig (KConfigBase* config, const QString& groupPrefix);
     virtual void writeSessionConfig (KConfigBase* config, const QString& groupPrefix);
 
-    void loadCodeinfo(const QString& bt);
+    void loadCodeinfo(const QString& ci, const QString& regex);
 
   public slots:
     void loadFile();
@@ -96,10 +96,11 @@ class KateCodeinfoPluginView : public Kate::PluginView, public Ui::CodeinfoWidge
     Kate::MainWindow* mw;
     QTimer timer;
     QString m_output;
+    QString m_regex;
 
     KProcess* m_proc;
 
-    void execute(const QString &command);
+    void execute(const QString &command, const QString& regex);
 };
 
 class KateCodeInfoConfigWidget : public Kate::PluginConfigPage, private Ui::CodeinfoConfigWidget
@@ -109,16 +110,26 @@ class KateCodeInfoConfigWidget : public Kate::PluginConfigPage, private Ui::Code
     explicit KateCodeInfoConfigWidget(QWidget* parent = 0, const char* name = 0);
     virtual ~KateCodeInfoConfigWidget();
 
-  public slots:
+ public slots:
     virtual void apply();
     virtual void reset();
     virtual void defaults();
 
   private slots:
-    virtual void hasChanged();
+    virtual void hasChanged();   
+    virtual void itemChanged(QTableWidgetItem *item);
+    virtual void add();
+    virtual void remove();
+    virtual void down();
+    virtual void up();
+    virtual void currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn );
 
   private:
     bool m_changed;
+
+    void addItem(QString& name, QString& command, QString& regex);
+
+    void swapRows(int from, int to);
 };
 
 class KateCodeInfoConfigDialog : public KDialog
