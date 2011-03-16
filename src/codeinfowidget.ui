@@ -10,11 +10,8 @@
     <height>275</height>
    </rect>
   </property>
-  <layout class="QGridLayout">
-   <property name="margin">
-    <number>0</number>
-   </property>
-   <item row="0" column="0">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
     <widget class="QTreeWidget" name="lstCodeinfo">
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -58,23 +55,35 @@
      </column>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item>
     <layout class="QHBoxLayout">
+     <property name="leftMargin">
+      <number>2</number>
+     </property>
+     <property name="rightMargin">
+      <number>2</number>
+     </property>
      <item>
-      <spacer name="spacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+      <widget class="QPushButton" name="btnConfig">
+       <property name="autoFillBackground">
+        <bool>false</bool>
        </property>
-       <property name="sizeType">
-        <enum>QSizePolicy::Fixed</enum>
+       <property name="text">
+        <string/>
        </property>
-       <property name="sizeHint" stdset="0">
+       <property name="iconSize">
         <size>
-         <width>10</width>
-         <height>20</height>
+         <width>16</width>
+         <height>16</height>
         </size>
        </property>
-      </spacer>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QComboBox" name="cmbActions">
@@ -95,7 +104,7 @@
         <bool>false</bool>
        </property>
        <property name="placeholderText">
-        <string>Enter command</string>
+        <string>Enter command ...</string>
        </property>
       </widget>
      </item>
@@ -120,23 +129,65 @@
        </property>
       </widget>
      </item>
-     <item>
-      <spacer name="spacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeType">
-        <enum>QSizePolicy::Fixed</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>10</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QWidget" name="widgetConfig" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <property name="leftMargin">
+       <number>2</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>2</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <spacer name="spacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>36</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="txtRegex">
+        <property name="placeholderText">
+         <string>Enter regex ...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnSave">
+        <property name="text">
+         <string>Save</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnRevert">
+        <property name="text">
+         <string>Revert</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

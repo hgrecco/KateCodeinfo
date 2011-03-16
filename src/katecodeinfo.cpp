@@ -38,6 +38,7 @@
 #include <QDataStream>
 #include <QTimer>
 #include <QClipboard>
+#include <QMessageBox>
 
 //END Includes
 
@@ -108,9 +109,6 @@ KIcon KateCodeinfoPlugin::configPageIcon (uint number) const
 }
 
 
-
-
-
 KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
   : Kate::PluginView(mainWindow)
   , mw(mainWindow)
@@ -118,8 +116,10 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
   toolView = mainWindow->createToolView("KatecodeinfoPlugin", Kate::MainWindow::Bottom, SmallIcon("msg_info"), i18n("Codeinfo"));
   QWidget* w = new QWidget(toolView);
   setupUi(w);  
+  config();
   w->show();
 
+  btnConfig->setIcon(KIcon("configure"));
   cmbActions->clear();
   cmbActions->addItem("Get all :-)");
   foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
@@ -132,6 +132,10 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
   connect(btnFile, SIGNAL(clicked()), this, SLOT(loadFile()));
   connect(btnClipboard, SIGNAL(clicked()), this, SLOT(loadClipboard()));
   connect(btnRun, SIGNAL(clicked()), this, SLOT(run()));
+  connect(btnConfig, SIGNAL(clicked()), this, SLOT(config()));
+  connect(btnSave, SIGNAL(clicked()), this, SLOT(save()));
+  connect(btnRevert, SIGNAL(clicked()), this, SLOT(revert()));
+
   connect(lstCodeinfo, SIGNAL(itemActivated(QTreeWidgetItem*, int)), this, SLOT(itemActivated(QTreeWidgetItem*, int)));
   connect(cmbActions, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(cmbChanged(const QString &)));
 
@@ -310,7 +314,6 @@ void KateCodeinfoPluginView::processOutput()
   m_output += m_proc->readAll();
 }
 
-// identify was called
 
 void KateCodeinfoPluginView::processExited(int /* exitCode */, QProcess::ExitStatus exitStatus)
 {
@@ -327,6 +330,40 @@ void KateCodeinfoPluginView::processExited(int /* exitCode */, QProcess::ExitSta
   btnRun->setDisabled(false);
 }
 
+void KateCodeinfoPluginView::revert()
+{
+  QList<QString> list = KConfigGroup(KGlobal::config(), "codeinfo").readEntry(cmbActions->currentText(), QList<QString>());
+  txtCommand->setText(list[0]);
+  txtRegex->setText(list[1]);
+}
+
+void KateCodeinfoPluginView::config()
+{
+  if (btnConfig->isChecked()) {
+    widgetConfig->show();
+    cmbActions->setEditable(true);
+    txtCommand->setReadOnly(false);
+    txtRegex->setReadOnly(false);
+  } else {
+    widgetConfig->hide();
+    cmbActions->setEditable(false);
+    txtCommand->setReadOnly(true);
+    txtRegex->setReadOnly(true);
+  }
+}
+
+void KateCodeinfoPluginView::save()
+{
+  KConfigGroup cg(KGlobal::config(), "codeinfo");
+  QList<QString> list = QList<QString>();
+  list << txtCommand->text() << txtRegex->text();
+  cg.writeEntry(cmbActions->currentText(), list);
+}
+
+void KateCodeinfoPluginView::onChange()
+{
+  btnSave->setDisabled(false);
+}
 
 
 
@@ -345,6 +382,7 @@ KateCodeinfoConfigWidget::KateCodeinfoConfigWidget(QWidget* parent, const char* 
   connect(btnRemove, SIGNAL(clicked()), this, SLOT(remove()));
   connect(btnDown, SIGNAL(clicked()), this, SLOT(down()));
   connect(btnUp, SIGNAL(clicked()), this, SLOT(up()));
+  connect(btnReset, SIGNAL(clicked()), this, SLOT(resetClicked()));
   connect(tblActions, SIGNAL(currentCellChanged(int, int, int, int)), this, SLOT(currentCellChanged(int, int, int, int)));
   connect(tblActions, SIGNAL(itemChanged(QTableWidgetItem *)), this, SLOT(itemChanged(QTableWidgetItem *)));
 
@@ -399,6 +437,31 @@ void KateCodeinfoConfigWidget::up()
 {
   swapRows(tblActions->currentRow(), tblActions->currentRow()-1);
 }
+
+void KateCodeinfoConfigWidget::resetClicked()
+{
+  QStringList content;
+  switch  (	QMessageBox::warning(
+             this, "Codeinfo plugin",
+             "This will overwrite your current action list with the default one.\n"
+             "Continue?",
+             "&Yes", "&No", QString::null, 1, 1 )  )
+  {
+  case 0:
+    tblActions->clear();
+    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
+    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
+    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
+    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
+    for(int i=0; i<content.count(); i+=3) {
+      addItem(content[i], content[i+1], content[i+2]);
+    }
+    break;
+  default:
+    break;
+  }
+}
+
 
 void KateCodeinfoConfigWidget::currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn )
 {
@@ -488,6 +551,7 @@ void KateCodeinfoConfigDialog::changed()
 {
   enableButtonApply(true);
 }
+
 
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

@@ -85,6 +85,11 @@ public slots:
   void run();
   void setStatus(const QString& status);
 
+  void revert();
+  void save();
+  void config();
+  void onChange();
+
 private slots:
   void itemActivated(QTreeWidgetItem* item, int column);
   void processOutput();
@@ -121,7 +126,8 @@ private slots:
   virtual void add();
   virtual void remove();
   virtual void down();
-  virtual void up();
+  virtual void up();  
+  virtual void resetClicked();
   virtual void currentCellChanged( int currentRow, int currentColumn, int previousRow, int previousColumn );
 
 private:
