@@ -46,7 +46,7 @@ public:
   Kate::PluginView *createView (Kate::MainWindow *mainWindow);
 
 signals:
-  void newStatus(const QString&);
+  void actionsUpdated();
 
   //
   // PluginConfigPageInterface
@@ -58,9 +58,11 @@ public:
   virtual QString configPageFullName(uint number = 0) const;
   virtual KIcon configPageIcon(uint number = 0) const;
 
+  void refreshActions();
   //
   // private data
   //
+
 private:
   static KateCodeinfoPlugin* s_self;
 };
@@ -77,7 +79,7 @@ public:
   virtual void readSessionConfig (KConfigBase* config, const QString& groupPrefix);
   virtual void writeSessionConfig (KConfigBase* config, const QString& groupPrefix);
 
-  void loadCodeinfo(const QString& ci);
+  void loadCodeinfo(const QString& ci);  
 
 public slots:
   void loadFile();
@@ -89,6 +91,7 @@ public slots:
   void save();
   void config();
   void onChange();
+  void refreshActions();
 
 private slots:
   void itemActivated(QTreeWidgetItem* item, int column);

@@ -67,8 +67,8 @@ KateCodeinfoPlugin& KateCodeinfoPlugin::self()
 Kate::PluginView *KateCodeinfoPlugin::createView (Kate::MainWindow *mainWindow)
 {
   KateCodeinfoPluginView* pv = new KateCodeinfoPluginView (mainWindow);
-  connect(this, SIGNAL(newStatus(const QString&)),
-          pv, SLOT(setStatus(const QString&)));
+  connect(this, SIGNAL(actionsUpdated()),
+          pv, SLOT(refreshActions()));
   return pv;
 }
 
@@ -108,6 +108,9 @@ KIcon KateCodeinfoPlugin::configPageIcon (uint number) const
   return KIcon("msg_info");
 }
 
+void KateCodeinfoPlugin::refreshActions() {
+  emit actionsUpdated();
+}
 
 KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
   : Kate::PluginView(mainWindow)
@@ -120,11 +123,8 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
   w->show();
 
   btnConfig->setIcon(KIcon("configure"));
-  cmbActions->clear();
-  cmbActions->addItem("Get all :-)");
-  foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
-    cmbActions->addItem(key);
-  }
+
+  refreshActions();
 
   timer.setSingleShot(true);
   connect(&timer, SIGNAL(timeout()), this, SLOT(clearStatus()));
@@ -146,6 +146,15 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
 KateCodeinfoPluginView::~KateCodeinfoPluginView ()
 {
   delete toolView;
+}
+
+void KateCodeinfoPluginView::refreshActions()
+{
+  cmbActions->clear();
+  cmbActions->addItem("Get all :-)");
+  foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
+    cmbActions->addItem(key);
+  }
 }
 
 void KateCodeinfoPluginView::readSessionConfig(KConfigBase* config, const QString& group)
@@ -495,18 +504,16 @@ void KateCodeinfoConfigWidget::apply()
     KConfigGroup cg(KGlobal::config(), "codeinfo");
     foreach(QString key, cg.keyList()) {
       cg.deleteEntry(key);
-    }    // TODO: update combo
-    // cmbActions->clear();
+    }
     QList<QString> list = QList<QString>();
     for (int i=0; i < (tblActions->rowCount()); i++)
     {            
       list.clear();
       list.append(tblActions->item(i, 1)->text());
       list.append(tblActions->item(i, 2)->text());
-      cg.writeEntry(tblActions->item(i, 0)->text(), list);
-      // TODO: update combo
-      //cmbActions->addItem(keyval[0], entries[keyval[0]]);
+      cg.writeEntry(tblActions->item(i, 0)->text(), list);      
     }
+    KateCodeinfoPlugin::self().refreshActions();
     m_changed = false;
   }
 }
