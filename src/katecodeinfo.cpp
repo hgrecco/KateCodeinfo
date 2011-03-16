@@ -181,8 +181,19 @@ void KateCodeinfoPluginView::loadFile()
 
 void KateCodeinfoPluginView::run()
 {
-  // TODO: Put the run code here
-  execute(txtCommand->text());
+  QString filename = "";
+  QString directory = "";
+
+  KTextEditor::View *view = mw->activeView();
+
+  if (view) {
+    KTextEditor::Document *doc = view->document();
+    filename = doc->url().path();
+    directory = doc->url().directory();
+  }
+  QString cmd = txtCommand->text();
+  cmd = cmd.replace("%filename", filename).replace("%directory", directory);
+  execute(cmd);
 }
 
 void KateCodeinfoPluginView::loadClipboard()
@@ -293,7 +304,6 @@ void KateCodeinfoPluginView::execute(const QString &command)
   setStatus("Running " +  cmbActions->currentText());
 }
 
-// get all output of identify
 
 void KateCodeinfoPluginView::processOutput()
 {
