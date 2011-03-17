@@ -104,7 +104,6 @@ private:
   Kate::MainWindow* mw;
   QTimer timer;
   QString m_output;
-  QString m_regex;
 
   KProcess* m_proc;
 

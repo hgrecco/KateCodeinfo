@@ -138,9 +138,7 @@ KateCodeinfoPluginView::KateCodeinfoPluginView(Kate::MainWindow *mainWindow)
 
   connect(lstCodeinfo, SIGNAL(itemActivated(QTreeWidgetItem*, int)), this, SLOT(itemActivated(QTreeWidgetItem*, int)));
   connect(cmbActions, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(cmbChanged(const QString &)));
-
-  // TODO This is not updating
-  cmbActions->setCurrentIndex(0);
+  cmbChanged(this->cmbActions->currentText());
 }
 
 KateCodeinfoPluginView::~KateCodeinfoPluginView ()
@@ -150,11 +148,15 @@ KateCodeinfoPluginView::~KateCodeinfoPluginView ()
 
 void KateCodeinfoPluginView::refreshActions()
 {
+  cmbActions->blockSignals(true);
   cmbActions->clear();
   cmbActions->addItem("Get all :-)");
   foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
     cmbActions->addItem(key);
   }
+  cmbActions->blockSignals(false);
+  // TODO This is not updating
+  // cmbActions->setCurrentIndex(0);
 }
 
 void KateCodeinfoPluginView::readSessionConfig(KConfigBase* config, const QString& group)
@@ -173,11 +175,11 @@ void KateCodeinfoPluginView::cmbChanged(const QString & text)
 {
   if (text == "Get all :-)") {
     txtCommand->setText("");
-    m_regex = "(P<message>.*)";
+    txtRegex->setText("(P<message>.*)");
   } else {
     QList<QString> list = KConfigGroup(KGlobal::config(), "codeinfo").readEntry(text, QList<QString>());
     txtCommand->setText(list[0]);
-    m_regex = list[1];
+    txtRegex->setText(list[1]);
     kDebug() << text << " " << list[0] << " " << list[1];
   }
 }
@@ -217,7 +219,7 @@ void KateCodeinfoPluginView::loadClipboard()
 
 void KateCodeinfoPluginView::loadCodeinfo(const QString& ci)
 {
-  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci, m_regex);
+  QList<CodeinfoInfo> infos = KateCodeinfoParser::parseCodeinfo(ci, txtRegex->text());
 
   lstCodeinfo->clear();
   foreach (const CodeinfoInfo& info, infos) {
@@ -458,11 +460,9 @@ void KateCodeinfoConfigWidget::resetClicked()
   {
   case 0:
     tblActions->clear();
-    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
-    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
-    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
-    content << "pep8" << "pep8 %filename" << "(P<filename>(?:\\w|\\\\|//))+:(P<line>\\d+):(P<col>\\d+)\\w(P<code>\\w)\\w(P<message>)";
-    for(int i=0; i<content.count(); i+=3) {
+    // (P<filename>.*):(P<line>\d+):(P<col>\d+):\s*(P<code>\w+)\s*(P<message>.*)
+    content << "pep8" << "pep8 %filename" << "(P<filename>.*):(P<line>\\d+):(P<col>\\d+):\\s*(P<code>\\w+)\\s*(P<message>.*)";
+    for(int i=0; i<content.length(); i+=3) {
       addItem(content[i], content[i+1], content[i+2]);
     }
     break;
@@ -506,8 +506,7 @@ void KateCodeinfoConfigWidget::apply()
       cg.deleteEntry(key);
     }
     QList<QString> list = QList<QString>();
-    for (int i=0; i < (tblActions->rowCount()); i++)
-    {            
+    for (int i=0; i < (tblActions->rowCount()); i++) {
       list.clear();
       list.append(tblActions->item(i, 1)->text());
       list.append(tblActions->item(i, 2)->text());
