@@ -13,12 +13,14 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR} ${KDE4_INCLUDES})
 ########### next target ###############
 
 set(katecodeinfoplugin_PART_SRCS
-    katecodeinfo.cpp
-    codeinfoparser.cpp
+    kciplugin.cpp
+    kciview.cpp
+    kciconfig.cpp
+    kciparser.cpp    
 )
 set(katecodeinfoplugin_PART_UI
-    codeinfowidget.ui
-    codeinfoconfigwidget.ui
+    kciview.ui
+    kciconfig.ui
 )
 kde4_add_ui_files(katecodeinfoplugin_PART_SRCS ${katecodeinfoplugin_PART_UI} )
 kde4_add_plugin(katecodeinfoplugin ${katecodeinfoplugin_PART_SRCS})

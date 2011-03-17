@@ -16,17 +16,19 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef KATE_CODEINFOPARSER_H
-#define KATE_CODEINFOPARSER_H
+#ifndef KCIPARSER_H
+#define KCIPARSER_H
 
-#include <QList>
 #include <QString>
 
-class CodeinfoInfo
+namespace KateCodeinfo
+{
+
+class Info
 {
 
 public:
-  CodeinfoInfo():filename(""),code(""),message(""),line(0),col(0){};
+  Info(): filename(""), code(""), message(""), line(0), col(0) {};
   QString filename;
   QString code;
   QString message;
@@ -34,12 +36,10 @@ public:
   int col;
 };
 
-namespace KateCodeinfoParser {
+QList<Info> parse(const QString& ci, QString regex);
 
-QList<CodeinfoInfo> parseCodeinfo(const QString& ci, QString regex);
+};
 
-}
-
-#endif //KATE_CODEINFOPARSER_H
+#endif //KCIPARSER_H
 
 // kate: space-indent on; indent-width 2; replace-tabs on;

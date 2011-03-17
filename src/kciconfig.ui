@@ -120,7 +120,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="btnReset">
+         <widget class="QPushButton" name="btnLoadDefault">
           <property name="text">
            <string>Reset</string>
           </property>
