@@ -35,7 +35,7 @@ namespace KateCodeinfo
 {
 
 K_PLUGIN_FACTORY(KatecodeinfoFactory, registerPlugin<Plugin>();)
-K_EXPORT_PLUGIN(KatecodeinfoFactory(KAboutData("katecodeinfoplugin", "katecodeinfoplugin", ki18n("Codeinfo"), "0.1", ki18n("Codeinfo"), KAboutData::License_LGPL_V2)))
+K_EXPORT_PLUGIN(KatecodeinfoFactory(KAboutData("katecodeinfoplugin", "katecodeinfoplugin", ki18n("Codeinfo"), "0.1", ki18n("Codeinfo"), KAboutData::License_GPL_V2)))
 
 Plugin* Plugin::s_self = 0L;
 
