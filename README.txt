@@ -14,6 +14,9 @@ Each tool consists of three parts: the name which is used to display, the comman
 
 Currently, the following tools are predefined:
 - pep8
+- pylint
+- gcc (syntax)
+- clang (syntax)
 
 You can add your own tools through the configuration window. Parsing is done using regular expressions in a line by line fashion. The syntax used to interpret the meaning of the pattern is RegExp2 as defined by `Qt 4.7 <http://doc.qt.nokia.com/4.7/qregexp.html>`_. Named captures had beed added to the syntax for greater flexiblity. For example `(P<message>.*)` means that the whole content of the line will be used in the field ``message``
 
