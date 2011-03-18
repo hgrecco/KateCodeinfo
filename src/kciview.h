@@ -72,7 +72,7 @@ private:
   KProcess* m_proc;
 
   void setStatus(const QString& status);
-  void execute(const QString &command);
+  void execute(const QString& command);
 };
 
 };

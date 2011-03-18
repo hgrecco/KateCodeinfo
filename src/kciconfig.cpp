@@ -24,13 +24,13 @@
 
 #include <QMessageBox>
 
+#include <kdebug.h>
 //END Includes
 
 namespace KateCodeinfo
 {
 
-Config::Config(QWidget* parent, const char* name)
-  : Kate::PluginConfigPage(parent, name)
+Config::Config(QWidget* parent, const char* name):Kate::PluginConfigPage(parent, name)
 {
   setupUi(this);
   btnUp->setIcon(KIcon("arrow-up"));
@@ -45,9 +45,11 @@ Config::Config(QWidget* parent, const char* name)
   connect(btnDown, SIGNAL(clicked()), this, SLOT(down()));
   connect(btnUp, SIGNAL(clicked()), this, SLOT(up()));
   connect(btnLoadDefault, SIGNAL(clicked()), this, SLOT(loadDefault()));
-  connect(tblActions, SIGNAL(currentCellChanged(int, int, int, int)), this, SLOT(currentCellChanged(int, int, int, int)));
-  connect(tblActions, SIGNAL(itemChanged(QTableWidgetItem *)), this, SLOT(itemChanged(QTableWidgetItem *)));
-  connect(this, SIGNAL(changed()), this, SLOT(onChange));
+  connect(tblActions, SIGNAL(currentCellChanged(int, int, int, int)),
+          this, SLOT(currentCellChanged(int, int, int, int)));
+  connect(tblActions, SIGNAL(itemChanged(QTableWidgetItem *)),
+          this, SLOT(itemChanged(QTableWidgetItem *)));
+  connect(this, SIGNAL(changed()), this, SLOT(hasChanged()));
 
   btnRemove->setDisabled((tblActions->rowCount()) == 0);
   currentCellChanged(tblActions->currentRow(), 0, 0, 0);
@@ -156,16 +158,12 @@ Config::~Config()
 void Config::apply()
 {
   if(m_changed) {
-    KConfigGroup cg(KGlobal::config(), "codeinfo");
-    foreach(QString key, cg.keyList()) {
-      cg.deleteEntry(key);
-    }
-    QList<QString> list = QList<QString>();
+    Store::deleteActions();
+    kDebug() << tblActions->rowCount() << " Check";
     for(int i = 0; i < (tblActions->rowCount()); i++) {
-      list.clear();
-      list.append(tblActions->item(i, 1)->text());
-      list.append(tblActions->item(i, 2)->text());
-      cg.writeEntry(tblActions->item(i, 0)->text(), list);
+      Store::writeAction(tblActions->item(i, 0)->text(),
+                         tblActions->item(i, 1)->text(),
+                         tblActions->item(i, 2)->text());
     }
     Plugin::self().refreshActions();
     m_changed = false;
@@ -175,9 +173,9 @@ void Config::apply()
 void Config::reset()
 {
   QList<QString> list;
-  foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
-    list = KConfigGroup(KGlobal::config(), "codeinfo").readEntry(key, QList<QString>());
-    addItem(key, list[0], list[1]);
+  foreach(QString name, Store::actionNames()) {
+    list = Store::readAction(name);
+    addItem(name, list[0], list[1]);
   }
 }
 
@@ -185,6 +183,38 @@ void Config::defaults()
 {
 
 }
+
+
+namespace Store
+{
+
+QList<QString> readAction(const QString& name)
+{
+  return KConfigGroup(KGlobal::config(), "codeinfo").readEntry(name, QList<QString>());
+}
+
+void writeAction(const QString& name, const QString& command, const QString& regex)
+{
+  KConfigGroup cg(KGlobal::config(), "codeinfo");
+  QList<QString> list = QList<QString>();
+  list << command << regex;
+  cg.writeEntry(name, list);
+  kDebug() << name << " written.";
+}
+
+QList<QString> actionNames() {
+  return KConfigGroup(KGlobal::config(), "codeinfo").keyList();
+} // Store
+
+void deleteActions()
+{
+  KConfigGroup cg(KGlobal::config(), "codeinfo");
+  foreach(QString key, cg.keyList()) {
+    cg.deleteEntry(key);
+  }
+}
+
+};
 
 };
 

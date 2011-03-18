@@ -17,8 +17,11 @@
 */
 
 //BEGIN Includes
+#include "kciconfig.h"
 #include "kciview.h"
 #include "kciview.moc"
+
+#include "ui_kciview.h"
 
 #include "kciparser.h"
 
@@ -55,7 +58,7 @@ View::View(Kate::MainWindow *mainWindow)
 
   connect(lstCodeinfo, SIGNAL(infoSelected(QTreeWidgetItem*, int)), this, SLOT(infoSelected(QTreeWidgetItem*, int)));
   connect(cmbActions, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(actionSelected(const QString &)));
-  actionSelected(this->cmbActions->currentText());
+  actionSelected(cmbActions->currentText());
 }
 
 View::~View()
@@ -68,7 +71,7 @@ void View::updateCmbActions()
   cmbActions->blockSignals(true);
   cmbActions->clear();
   cmbActions->addItem("Get all :-)");
-  foreach(QString key, KConfigGroup(KGlobal::config(), "codeinfo").keyList()) {
+  foreach(QString key, Store::actionNames()) {
     cmbActions->addItem(key);
   }
   cmbActions->blockSignals(false);
@@ -94,7 +97,7 @@ void View::actionSelected(const QString & text)
     txtCommand->setText("");
     txtRegex->setText("(P<message>.*)");
   } else {
-    QList<QString> list = KConfigGroup(KGlobal::config(), "codeinfo").readEntry(text, QList<QString>());
+    QList<QString> list = Store::readAction(text);
     txtCommand->setText(list[0]);
     txtRegex->setText(list[1]);
     kDebug() << text << " " << list[0] << " " << list[1];
@@ -260,8 +263,8 @@ void View::processExited(int /* exitCode */, QProcess::ExitStatus exitStatus)
 }
 
 void View::revert()
-{
-  QList<QString> list = KConfigGroup(KGlobal::config(), "codeinfo").readEntry(cmbActions->currentText(), QList<QString>());
+{  
+  QList<QString> list = Store::readAction(cmbActions->currentText());
   txtCommand->setText(list[0]);
   txtRegex->setText(list[1]);
 }
@@ -283,10 +286,7 @@ void View::config()
 
 void View::save()
 {
-  KConfigGroup cg(KGlobal::config(), "codeinfo");
-  QList<QString> list = QList<QString>();
-  list << txtCommand->text() << txtRegex->text();
-  cg.writeEntry(cmbActions->currentText(), list);
+  Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
 }
 
 void View::onChange()

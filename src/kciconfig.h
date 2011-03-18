@@ -19,6 +19,11 @@
 #ifndef KCICONFIG_H
 #define KCICONFIG_H
 
+#include <kate/pluginconfigpageinterface.h>
+#include "ui_kciconfig.h"
+
+#include <QTableWidgetItem>
+
 namespace KateCodeinfo
 {
 
@@ -48,6 +53,14 @@ private:
   bool m_changed;
   void addItem(QString& name, QString& command, QString& regex);
   void swapRows(int from, int to);
+};
+
+namespace Store
+{
+  QList<QString> readAction(const QString& name);
+  void writeAction(const QString& name, const QString& command, const QString& regex);
+  QList<QString> actionNames();
+  void deleteActions();
 };
 
 };

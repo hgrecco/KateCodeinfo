@@ -22,9 +22,6 @@
 #include <kate/plugin.h>
 #include <kate/pluginconfigpageinterface.h>
 
-#include "ui_kciview.h"
-#include "ui_kciconfig.h"
-
 namespace KateCodeinfo
 {
 class Plugin: public Kate::Plugin, public Kate::PluginConfigPageInterface
