@@ -56,7 +56,7 @@ View::View(Kate::MainWindow *mainWindow)
   connect(btnSave, SIGNAL(clicked()), this, SLOT(save()));
   connect(btnRevert, SIGNAL(clicked()), this, SLOT(revert()));
 
-  connect(lstCodeinfo, SIGNAL(infoSelected(QTreeWidgetItem*, int)), this, SLOT(infoSelected(QTreeWidgetItem*, int)));
+  connect(lstCodeinfo, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(infoSelected(QTreeWidgetItem*, int)));
   connect(cmbActions, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(actionSelected(const QString &)));
   actionSelected(cmbActions->currentText());
 }
