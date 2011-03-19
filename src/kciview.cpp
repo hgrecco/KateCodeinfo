@@ -29,6 +29,7 @@
 #include <kfiledialog.h>
 
 #include <QClipboard>
+#include <QMessageBox>
 
 //END Includes
 
@@ -93,6 +94,7 @@ void View::writeSessionConfig(KConfigBase* config, const QString& group)
 
 void View::actionSelected(const QString & text)
 {
+  m_currentAction = text;
   if(text == "Get all :-)") {
     txtCommand->setText("");
     txtRegex->setText("(P<message>.*)");
@@ -286,7 +288,26 @@ void View::config()
 
 void View::save()
 {
-  Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
+
+  if (m_currentAction != cmbActions->currentText()) {
+    switch(QMessageBox::warning(
+             this->toolView, tr("Codeinfo plugin"),
+             tr("You have changed the name of the action.") +
+             tr("Do you want to create a new action with a different name or rename the old one?"),
+             tr("&Rename"), tr("&New"), QString::null, 1, 1)) {
+    case 0: //Rename
+        Store::deleteAction(m_currentAction);
+        Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
+        m_currentAction = cmbActions->currentText();
+        updateCmbActions();
+        cmbActions->setCurrentIndex(cmbActions->findText(m_currentAction));
+      break;
+    default:
+        Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
+        m_currentAction = cmbActions->currentText();
+      break;
+    }
+  }
 }
 
 void View::onChange()

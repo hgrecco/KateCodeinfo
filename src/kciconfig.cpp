@@ -71,7 +71,7 @@ void Config::addItem(QString& name, QString& command, QString& regex)
 
 void Config::add()
 {
-  QString empty = "";
+  QString empty = "Test";
   addItem(empty, empty, empty);
   emit changed();
 }
@@ -116,7 +116,9 @@ void Config::loadDefault()
            "Continue?",
            "&Yes", "&No", QString::null, 1, 1)) {
   case 0:
-    tblActions->clear();
+    for (int i=tblActions->rowCount(); --i >= 0; ) {
+      tblActions->removeRow(i);
+    }
     // (P<filename>.*):(P<line>\d+):(P<col>\d+):\s*(P<code>\w+)\s*(P<message>.*)
     content << "pep8" << "pep8 %filename" << "(P<filename>.*):(P<line>\\d+):(P<col>\\d+):\\s*(P<code>\\w+)\\s*(P<message>.*)";
     content << "pylint" << "pylint -f parseable -r n %filename" << "(P<filename>.*):(P<line>\\d+):\\s*\\[(P<code>\\w+)(?:,(?:.*))*\\]\\s+(P<message>.*)";
@@ -215,6 +217,12 @@ void deleteActions()
   foreach(QString key, cg.keyList()) {
     cg.deleteEntry(key);
   }
+}
+
+void deleteAction(const QString& name)
+{
+  KConfigGroup cg(KGlobal::config(), "codeinfo");
+  cg.deleteEntry(name);
 }
 
 };

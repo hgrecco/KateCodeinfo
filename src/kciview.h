@@ -68,7 +68,7 @@ private:
   QWidget* toolView;
   Kate::MainWindow* mw;
   QString m_output;
-
+  QString m_currentAction;
   KProcess* m_proc;
 
   void setStatus(const QString& status);

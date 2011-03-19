@@ -61,6 +61,7 @@ namespace Store
   void writeAction(const QString& name, const QString& command, const QString& regex);
   QList<QString> actionNames();
   void deleteActions();
+  void deleteAction(const QString& name);
 };
 
 };
