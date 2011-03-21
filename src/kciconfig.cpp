@@ -124,6 +124,7 @@ void Config::loadDefault()
     content << "pylint" << "pylint -f parseable -r n %filename" << "(P<filename>.*):(P<line>\\d+):\\s*\\[(P<code>\\w+)(?:,(?:.*))*\\]\\s+(P<message>.*)";
     content << "gcc syntax" << "gcc -fsyntax-only -Wall %filename" << "(P<filename>.*):(P<line>\\d+):(P<col>\\d+):\\s*(P<code>\\w+):\\s*(P<message>.*)";
     content << "clang syntax" << "clang -fsyntax-only -Wall -fno-caret-diagnostics %filename" << "(P<filename>.*):(P<line>\\d+):(P<col>\\d+):\\s*(P<code>\\w+):\\s*(P<message>.*)";
+    content << "gjslint" << "gjslint %filename" << "Line\\s(P<line>\\d+),\\s(P<code>\\w:\\w+):\\s(P<message>.*)";
     for(int i = 0; i < content.length(); i += 3) {
       addItem(content[i], content[i+1], content[i+2]);
     }
