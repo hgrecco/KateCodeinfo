@@ -71,9 +71,10 @@ void Config::addItem(Store::Action action)
 {
   int row = tblActions->currentRow() + 1;
   tblActions->insertRow(row);
-  QCheckBox *tblcbx= new QCheckBox();
-  tblcbx->setChecked(action.enabled);
-  tblActions->setCellWidget(row, 0, tblcbx);
+  QCheckBox *chk= new QCheckBox();
+  chk->setChecked(action.enabled);
+  connect(chk, SIGNAL(stateChanged(int)), this, SLOT(hasChanged()));
+  tblActions->setCellWidget(row, 0, chk);
   tblActions->setItem(row, 1, new QTableWidgetItem(action.name));
   tblActions->setItem(row, 2, new QTableWidgetItem(action.command));
   tblActions->setItem(row, 3, new QTableWidgetItem(action.regex));
@@ -179,7 +180,6 @@ void Config::apply()
 {
   if(m_changed) {
     Store::deleteActions();
-    kDebug() << tblActions->rowCount() << " Check";
     for(int i = 0; i < (tblActions->rowCount()); i++) {
       Store::writeAction(tblActions->item(i, 1)->text(),
                          tblActions->item(i, 2)->text(),
@@ -196,7 +196,7 @@ void Config::reset()
   Store::Action ac;
   foreach(QString name, Store::actionNames()) {
     ac = Store::readAction(name);
-    addItem(name, ac.command, ac.regex);
+    addItem(ac);
   }
 }
 
@@ -254,11 +254,13 @@ Action readAction(const QString& name)
   KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
   Action ac;
   if (_config.hasGroup(name)) {
-    KConfigGroup config(&_config, name);
-    ac.enabled = config.readEntry("enabled", false);
+    KConfigGroup config(&_config, name);        
+    ac.name = name;
+    ac.enabled = (config.readEntry("enabled", "none") == "true");
     ac.command = config.readEntry("command", "");
     ac.regex = config.readEntry("regex", "");
   } else {
+    ac.name = name;
     ac.command = "Not found.";
     ac.regex = "Not found.";
   }

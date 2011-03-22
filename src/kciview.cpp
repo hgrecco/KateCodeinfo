@@ -73,7 +73,9 @@ void View::updateCmbActions()
   cmbActions->clear();
   cmbActions->addItem("Get all :-)");
   foreach(QString key, Store::actionNames()) {
-    cmbActions->addItem(key);
+    if (Store::readAction(key).enabled) {
+      cmbActions->addItem(key);
+    }
   }
   cmbActions->blockSignals(false);
   // TODO This is not updating
