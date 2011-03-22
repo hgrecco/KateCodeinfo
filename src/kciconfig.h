@@ -57,11 +57,20 @@ private:
 
 namespace Store
 {
-  QList<QString> readAction(const QString& name);
-  void writeAction(const QString& name, const QString& command, const QString& regex);
+
+struct Action
+{
+  bool enabled;
+  QString name;
+  QString command;
+  QString regex;
+};
+
+  Action readAction(const QString& name);
+  void writeAction(const QString& name, const QString& command, const QString& regex, bool enabled=true);
   QList<QString> actionNames();
   void deleteActions();
-  void deleteAction(const QString& name);
+  void deleteAction(const QString& name, bool removeFromList=true);
 };
 
 };

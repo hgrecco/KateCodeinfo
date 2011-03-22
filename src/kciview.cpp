@@ -99,10 +99,9 @@ void View::actionSelected(const QString & text)
     txtCommand->setText("");
     txtRegex->setText("(P<message>.*)");
   } else {
-    QList<QString> list = Store::readAction(text);
-    txtCommand->setText(list[0]);
-    txtRegex->setText(list[1]);
-    kDebug() << text << " " << list[0] << " " << list[1];
+    Store::Action ac = Store::readAction(text);
+    txtCommand->setText(ac.command);
+    txtRegex->setText(ac.regex);
   }
 }
 
@@ -266,9 +265,9 @@ void View::processExited(int /* exitCode */, QProcess::ExitStatus exitStatus)
 
 void View::revert()
 {  
-  QList<QString> list = Store::readAction(cmbActions->currentText());
-  txtCommand->setText(list[0]);
-  txtRegex->setText(list[1]);
+  Store::Action ac = Store::readAction(cmbActions->currentText());
+  txtCommand->setText(ac.command);
+  txtRegex->setText(ac.regex);
 }
 
 void View::config()

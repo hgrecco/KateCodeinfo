@@ -178,10 +178,10 @@ void Config::apply()
 
 void Config::reset()
 {
-  QList<QString> list;
+  Store::Action ac;
   foreach(QString name, Store::actionNames()) {
-    list = Store::readAction(name);
-    addItem(name, list[0], list[1]);
+    ac = Store::readAction(name);
+    addItem(name, ac.command, ac.regex);
   }
 }
 
@@ -194,36 +194,60 @@ void Config::defaults()
 namespace Store
 {
 
-QList<QString> readAction(const QString& name)
+void writeAction(const QString& name, const QString& command, const QString& regex, bool enabled)
 {
-  return KConfigGroup(KGlobal::config(), "codeinfo").readEntry(name, QList<QString>());
-}
-
-void writeAction(const QString& name, const QString& command, const QString& regex)
-{
-  KConfigGroup cg(KGlobal::config(), "codeinfo");
-  QList<QString> list = QList<QString>();
-  list << command << regex;
-  cg.writeEntry(name, list);
-  kDebug() << name << " written.";
-}
-
-QList<QString> actionNames() {
-  return KConfigGroup(KGlobal::config(), "codeinfo").keyList();
-} // Store
-
-void deleteActions()
-{
-  KConfigGroup cg(KGlobal::config(), "codeinfo");
-  foreach(QString key, cg.keyList()) {
-    cg.deleteEntry(key);
+  KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
+  KConfigGroup config = _config.group(name);
+  config.writeEntry("command", command);
+  config.writeEntry("regex", regex);
+  config.writeEntry("enabled", enabled);
+  QList<QString> names = actionNames();
+  if (!names.contains(name)) {
+    names.append(name);
+    _config.group("global").writeEntry("actions", names);
   }
 }
 
-void deleteAction(const QString& name)
+void deleteActions()
 {
-  KConfigGroup cg(KGlobal::config(), "codeinfo");
-  cg.deleteEntry(name);
+  KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
+  foreach(QString name, actionNames()) {
+    deleteAction(name, false);
+  }
+  _config.group("global").writeEntry("actions", QList<QString>());
+}
+
+void deleteAction(const QString& name, bool removeFromList)
+{
+  KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
+  _config.deleteGroup(name);
+  QList<QString> names = actionNames();
+  names.removeOne(name);
+  if (removeFromList) {
+    _config.group("global").writeEntry("actions", names);
+  }
+}
+
+QList<QString> actionNames()
+{
+  KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
+  return _config.group("global").readEntry("actions", QStringList());
+}
+
+Action readAction(const QString& name)
+{
+  KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
+  Action ac;
+  if (_config.hasGroup(name)) {
+    KConfigGroup config(&_config, name);
+    ac.enabled = config.readEntry("enabled", false);
+    ac.command = config.readEntry("command", "");
+    ac.regex = config.readEntry("regex", "");
+  } else {
+    ac.command = "Not found.";
+    ac.regex = "Not found.";
+  }
+  return ac;
 }
 
 };
