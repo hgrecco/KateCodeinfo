@@ -27,6 +27,25 @@
 namespace KateCodeinfo
 {
 
+namespace Store
+{
+
+struct Action
+{
+  bool enabled;
+  QString name;
+  QString command;
+  QString regex;
+};
+
+  Action readAction(const QString& name);
+  void writeAction(const QString& name, const QString& command, const QString& regex, bool enabled=true);
+  QList<QString> actionNames();
+  void deleteActions();
+  void deleteAction(const QString& name, bool removeFromList=true);
+};
+
+
 class Config : public Kate::PluginConfigPage, private Ui::CodeinfoConfigWidget
 {
   Q_OBJECT
@@ -51,26 +70,9 @@ private slots:
 
 private:
   bool m_changed;
-  void addItem(QString& name, QString& command, QString& regex);
+  void addItem(QString& name, QString& command, QString& regex, bool enabled=true);
+  void addItem(Store::Action action);
   void swapRows(int from, int to);
-};
-
-namespace Store
-{
-
-struct Action
-{
-  bool enabled;
-  QString name;
-  QString command;
-  QString regex;
-};
-
-  Action readAction(const QString& name);
-  void writeAction(const QString& name, const QString& command, const QString& regex, bool enabled=true);
-  QList<QString> actionNames();
-  void deleteActions();
-  void deleteAction(const QString& name, bool removeFromList=true);
 };
 
 };

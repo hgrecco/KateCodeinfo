@@ -23,6 +23,7 @@
 #include "kciconfig.moc"
 
 #include <QMessageBox>
+#include <QCheckBox>
 
 #include <kdebug.h>
 //END Includes
@@ -56,13 +57,26 @@ Config::Config(QWidget* parent, const char* name):Kate::PluginConfigPage(parent,
   m_changed = false;
 }
 
-void Config::addItem(QString& name, QString& command, QString& regex)
+void Config::addItem(QString& name, QString& command, QString& regex, bool enabled)
+{
+  Store::Action ac;
+  ac.name = name;
+  ac.command = command;
+  ac.regex = regex;
+  ac.enabled = enabled;
+  addItem(ac);
+}
+
+void Config::addItem(Store::Action action)
 {
   int row = tblActions->currentRow() + 1;
   tblActions->insertRow(row);
-  tblActions->setItem(row, 0, new QTableWidgetItem(name));
-  tblActions->setItem(row, 1, new QTableWidgetItem(command));
-  tblActions->setItem(row, 2, new QTableWidgetItem(regex));
+  QCheckBox *tblcbx= new QCheckBox();
+  tblcbx->setChecked(action.enabled);
+  tblActions->setCellWidget(row, 0, tblcbx);
+  tblActions->setItem(row, 1, new QTableWidgetItem(action.name));
+  tblActions->setItem(row, 2, new QTableWidgetItem(action.command));
+  tblActions->setItem(row, 3, new QTableWidgetItem(action.regex));
   tblActions->resizeColumnsToContents();
   tblActions->setCurrentCell(row, 0);
   btnRemove->setDisabled(false);
@@ -167,9 +181,10 @@ void Config::apply()
     Store::deleteActions();
     kDebug() << tblActions->rowCount() << " Check";
     for(int i = 0; i < (tblActions->rowCount()); i++) {
-      Store::writeAction(tblActions->item(i, 0)->text(),
-                         tblActions->item(i, 1)->text(),
-                         tblActions->item(i, 2)->text());
+      Store::writeAction(tblActions->item(i, 1)->text(),
+                         tblActions->item(i, 2)->text(),
+                         tblActions->item(i, 3)->text(),
+                         qobject_cast<QCheckBox*>(tblActions->cellWidget(i, 0))->isChecked());
     }
     Plugin::self().refreshActions();
     m_changed = false;
