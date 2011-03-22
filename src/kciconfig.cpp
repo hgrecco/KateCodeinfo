@@ -135,6 +135,7 @@ void Config::loadDefault()
       tblActions->removeRow(i);
     }
     // (P<filename>.*):(P<line>\d+):(P<col>\d+):\s*(P<code>\w+)\s*(P<message>.*)
+    content << "get all" << "cat %filename" << "(P<message>.*)";
     content << "pep8" << "pep8 %filename" << "(P<filename>.*):(P<line>\\d+):(P<col>\\d+):\\s*(P<code>\\w+)\\s*(P<message>.*)";
     content << "pylint" << "pylint -f parseable -r n %filename" << "(P<filename>.*):(P<line>\\d+):\\s*\\[(P<code>\\w+)(?:,(?:.*))*\\]\\s+(P<message>.*)";
     content << "gcc syntax" << "gcc -fsyntax-only -Wall %filename" << "(P<filename>.*):(P<line>\\d+):(P<col>\\d+):\\s*(P<code>\\w+):\\s*(P<message>.*)";

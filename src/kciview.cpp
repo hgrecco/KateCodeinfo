@@ -71,7 +71,6 @@ void View::updateCmbActions()
 {
   cmbActions->blockSignals(true);
   cmbActions->clear();
-  cmbActions->addItem("Get all :-)");
   foreach(QString key, Store::actionNames()) {
     if (Store::readAction(key).enabled) {
       cmbActions->addItem(key);
@@ -97,14 +96,9 @@ void View::writeSessionConfig(KConfigBase* config, const QString& group)
 void View::actionSelected(const QString & text)
 {
   m_currentAction = text;
-  if(text == "Get all :-)") {
-    txtCommand->setText("");
-    txtRegex->setText("(P<message>.*)");
-  } else {
-    Store::Action ac = Store::readAction(text);
-    txtCommand->setText(ac.command);
-    txtRegex->setText(ac.regex);
-  }
+  Store::Action ac = Store::readAction(text);
+  txtCommand->setText(ac.command);
+  txtRegex->setText(ac.regex);
 }
 
 void View::loadFile()
