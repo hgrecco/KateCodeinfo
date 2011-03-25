@@ -76,9 +76,9 @@ void View::updateCmbActions()
       cmbActions->addItem(key);
     }
   }
+  cmbActions->setCurrentIndex(0);
+  actionSelected(cmbActions->currentText());
   cmbActions->blockSignals(false);
-  // TODO This is not updating
-  // cmbActions->setCurrentIndex(0);
 }
 
 void View::updateGlobal()
