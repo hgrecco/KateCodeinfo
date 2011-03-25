@@ -25,6 +25,8 @@
 
 #include "ui_kciview.h"
 
+#include "kciconfig.h"
+
 #include <KProcess>
 
 namespace KateCodeinfo
@@ -46,6 +48,7 @@ public:
 
 public slots:
   void updateCmbActions();
+  void updateGlobal();
 
 private slots:
   void actionSelected(const QString & text);
@@ -70,6 +73,8 @@ private:
   QString m_output;
   QString m_currentAction;
   KProcess* m_proc;
+
+  Store::Global m_global;
 
   void setStatus(const QString& status);
   void execute(const QString& command);

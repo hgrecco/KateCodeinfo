@@ -17,7 +17,6 @@
 */
 
 //BEGIN Includes
-#include "kciconfig.h"
 #include "kciview.h"
 #include "kciview.moc"
 
@@ -49,6 +48,7 @@ View::View(Kate::MainWindow *mainWindow)
   btnConfig->setIcon(KIcon("configure"));
 
   updateCmbActions();
+  updateGlobal();
 
   connect(btnFile, SIGNAL(clicked()), this, SLOT(loadFile()));
   connect(btnClipboard, SIGNAL(clicked()), this, SLOT(loadClipboard()));
@@ -79,6 +79,11 @@ void View::updateCmbActions()
   cmbActions->blockSignals(false);
   // TODO This is not updating
   // cmbActions->setCurrentIndex(0);
+}
+
+void View::updateGlobal()
+{
+  m_global = Store::readGlobal();
 }
 
 void View::readSessionConfig(KConfigBase* config, const QString& group)
@@ -114,16 +119,19 @@ void View::loadFile()
 
 void View::run()
 {
-  QString filename = "";
-  QString directory = "";
-
   KTextEditor::View *view = mw->activeView();
 
-  if(view) {
-    KTextEditor::Document *doc = view->document();
-    filename = doc->url().path();
-    directory = doc->url().directory();
+  if (!view) {
+    return;
   }
+  if (m_global.saveBeforeRun) {
+    view->document()->save();
+  }
+
+  KTextEditor::Document *doc = view->document();
+  QString filename = doc->url().path();
+  QString directory = doc->url().directory();
+
   kDebug() << filename << "-" << directory;
   QString cmd = txtCommand->text();
   cmd = cmd.replace("%filename", filename).replace("%directory", directory);
@@ -141,7 +149,13 @@ void View::show(const QString& ci)
   QList<Info> infos = parse(ci, txtRegex->text());
 
   lstCodeinfo->clear();
+
+  bool showAnyway = ((m_global.showNonParsed == 1) && btnConfig->isChecked()) or (m_global.showNonParsed == 2);
+
   foreach(const Info & info, infos) {
+    if (!info.parsed && !showAnyway) {
+        continue;
+    }
     QTreeWidgetItem* it = new QTreeWidgetItem(lstCodeinfo);
 
     // File

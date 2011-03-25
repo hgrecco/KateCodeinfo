@@ -37,7 +37,7 @@ public:
   Kate::PluginView *createView(Kate::MainWindow *mainWindow);
 
 signals:
-  void actionsUpdated();
+  void configUpdated();
 
   //
   // PluginConfigPageInterface

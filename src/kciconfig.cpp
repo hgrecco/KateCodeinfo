@@ -51,6 +51,10 @@ Config::Config(QWidget* parent, const char* name):Kate::PluginConfigPage(parent,
   connect(tblActions, SIGNAL(itemChanged(QTableWidgetItem *)),
           this, SLOT(itemChanged(QTableWidgetItem *)));
   connect(this, SIGNAL(changed()), this, SLOT(hasChanged()));
+  connect(chkSaveBeforeRun, SIGNAL(stateChanged(int)),
+          this, SLOT(emitChanged()));
+  connect(cmbNonParsed, SIGNAL(currentIndexChanged(int)),
+          this, SLOT(emitChanged()));
 
   btnRemove->setDisabled((tblActions->rowCount()) == 0);
   currentCellChanged(tblActions->currentRow(), 0, 0, 0);
@@ -151,7 +155,6 @@ void Config::loadDefault()
   }
 }
 
-
 void Config::currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
   Q_UNUSED(currentColumn);
@@ -159,6 +162,11 @@ void Config::currentCellChanged(int currentRow, int currentColumn, int previousR
   Q_UNUSED(previousColumn);
   btnUp->setDisabled((currentRow == 0));
   btnDown->setDisabled(currentRow == (tblActions->rowCount() - 1));
+  emit changed();
+}
+
+void Config::emitChanged()
+{
   emit changed();
 }
 
@@ -187,6 +195,10 @@ void Config::apply()
                          tblActions->item(i, 3)->text(),
                          qobject_cast<QCheckBox*>(tblActions->cellWidget(i, 0))->isChecked());
     }
+    Store::Global global;
+    global.saveBeforeRun = chkSaveBeforeRun->isChecked();
+    global.showNonParsed = cmbNonParsed->currentIndex();
+    Store::writeGlobal(global);
     Plugin::self().refreshActions();
     m_changed = false;
   }
@@ -199,6 +211,9 @@ void Config::reset()
     ac = Store::readAction(name);
     addItem(ac);
   }
+  Store::Global global = Store::readGlobal();
+  chkSaveBeforeRun->setChecked(global.saveBeforeRun);
+  cmbNonParsed->setCurrentIndex(global.showNonParsed);
 }
 
 void Config::defaults()
@@ -213,7 +228,7 @@ namespace Store
 Global readGlobal()
 {
   KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
-  KConfigGroup config = _config.group("__global__");
+  KConfigGroup config = _config.group("global");
   Global global;
   global.saveBeforeRun = (config.readEntry("saveBeforeRun","true") == "true");
   global.showNonParsed = config.readEntry("showNonParsed", 1);
@@ -223,7 +238,7 @@ Global readGlobal()
 void writeGlobal(const Global& global)
 {
   KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
-  KConfigGroup config = _config.group("__global__");
+  KConfigGroup config = _config.group("global");
   config.writeEntry("saveBeforeRun", global.saveBeforeRun);
   config.writeEntry("showNonParsed", global.showNonParsed);
 }
@@ -231,7 +246,12 @@ void writeGlobal(const Global& global)
 void writeAction(const QString& name, const QString& command, const QString& regex, bool enabled)
 {
   KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
-  KConfigGroup config = _config.group(name);
+  KConfigGroup config;
+  if (name == "global") {
+    config= _config.group("global_");
+  } else {
+    config = _config.group(name);
+  }
   config.writeEntry("command", command);
   config.writeEntry("regex", regex);
   config.writeEntry("enabled", enabled);

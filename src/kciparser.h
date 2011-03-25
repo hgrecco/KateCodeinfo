@@ -34,6 +34,7 @@ public:
   QString message;
   int line;
   int col;
+  bool parsed;
 };
 
 QList<Info> parse(const QString& ci, QString regex);

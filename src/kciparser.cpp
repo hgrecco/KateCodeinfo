@@ -45,9 +45,9 @@ static Info parseCodeinfoLine(const QString& line, const QRegExp& reg, const QHa
   // filename \t line number \t column number \t code \t message
   int index = reg.indexIn(line);
   QHash<QString, int>::const_iterator el;
-  kDebug() << index;
-  if(index > -1) {
-    Info info;
+  Info info;
+
+  if ((info.parsed = (index > -1))) {
     if((el = order.find("filename")) != order.end()) {
       info.filename = reg.cap(el.value());
     }
@@ -63,12 +63,10 @@ static Info parseCodeinfoLine(const QString& line, const QRegExp& reg, const QHa
     if((el = order.find("message")) != order.end()) {
       info.message = reg.cap(el.value());
     }
-    return info;
+  }  else {
+    info.message = line;
+    info.line = -1;
   }
-  kDebug() << "Unknown codeinfo line:" << line;
-
-  Info info;
-  info.line = -1;
   return info;
 }
 
@@ -99,9 +97,7 @@ QList<Info> parse(const QString& ci, QString regex)
   QList<Info> results;
   for(int i = 0; i < l.size(); ++i) {
     Info info = parseCodeinfoLine(l[i], reg, order);
-    if(info.line >= 0) {
-      results.append(info);
-    }
+    results.append(info);
   }
 
   return results;

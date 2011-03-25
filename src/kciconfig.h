@@ -75,12 +75,14 @@ private slots:
   void up();
   void loadDefault();
   void currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
+  void emitChanged();
 
 private:
   bool m_changed;
   void addItem(QString& name, QString& command, QString& regex, bool enabled=true);
   void addItem(Store::Action action);
   void swapRows(int from, int to);
+
 };
 
 };

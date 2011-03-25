@@ -59,8 +59,10 @@ Plugin& Plugin::self()
 Kate::PluginView *Plugin::createView(Kate::MainWindow *mainWindow)
 {
   View* pv = new View(mainWindow);
-  connect(this, SIGNAL(actionsUpdated()),
+  connect(this, SIGNAL(configUpdated()),
           pv, SLOT(updateCmbActions()));
+  connect(this, SIGNAL(configUpdated()),
+          pv, SLOT(updateGlobal()));
   return pv;
 }
 
@@ -102,7 +104,7 @@ KIcon Plugin::configPageIcon(uint number) const
 
 void Plugin::refreshActions()
 {
-  emit actionsUpdated();
+  emit configUpdated();
 }
 
 }; // KateCodeinfo
