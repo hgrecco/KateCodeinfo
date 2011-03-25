@@ -45,9 +45,12 @@ private:
   QHash<QString, int> m_order;
 
 public:
+  NamedRegExp();
   NamedRegExp(QString& regex);
   QString namedCap(QString groupName, QString notfound);
 
+  void setNamedPattern(QString &regex);
+  QSet<QString> namedGroups();
 };
 
 QList<Info> parse(const QString& ci, QString regex);

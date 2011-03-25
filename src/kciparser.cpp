@@ -26,11 +26,20 @@
 namespace KateCodeinfo
 {
 
+
+NamedRegExp::NamedRegExp():QRegExp() {
+}
+
 NamedRegExp::NamedRegExp(QString& regex):QRegExp() {
+  setNamedPattern(regex);
+}
+
+void NamedRegExp::setNamedPattern(QString& regex) {
   QRegExp named("\\(P<([^<]*)>");
   kDebug() << "Regex before name transformation: " << regex;
   int pos = 0;
   int count = 0;
+  m_order.clear();
   while(pos >= 0) {
     pos = named.indexIn(regex, pos);
     if(pos >= 0) {
@@ -51,6 +60,11 @@ QString NamedRegExp::namedCap(QString groupName, QString notfound) {
     return notfound;
   }
 }
+
+QSet<QString> NamedRegExp::namedGroups() {
+  return QSet<QString>::fromList(m_order.keys());
+}
+
 
 static QString eolDelimiter(const QString& str)
 {

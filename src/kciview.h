@@ -24,8 +24,10 @@
 #include <kate/mainwindow.h>
 
 #include "ui_kciview.h"
-
+#include <kciparser.h>
 #include "kciconfig.h"
+
+
 
 #include <KProcess>
 
@@ -59,6 +61,8 @@ private slots:
 
   void config();
   void onChange();
+  void commandChanged(QString newText);
+  void regexChanged(QString newText);
   void revert();
   void save();
 
@@ -73,6 +77,7 @@ private:
   QString m_output;
   QString m_currentAction;
   KProcess* m_proc;
+  NamedRegExp m_nregex;
 
   Store::Global m_global;
 

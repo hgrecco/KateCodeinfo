@@ -47,6 +47,7 @@ View::View(Kate::MainWindow *mainWindow)
 
   btnConfig->setIcon(KIcon("configure"));
 
+  m_nregex = NamedRegExp();
   updateCmbActions();
   updateGlobal();
 
@@ -59,6 +60,7 @@ View::View(Kate::MainWindow *mainWindow)
 
   connect(lstCodeinfo, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(infoSelected(QTreeWidgetItem*, int)));
   connect(cmbActions, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(actionSelected(const QString &)));
+  connect(txtRegex, SIGNAL(textChanged(QString)), this, SLOT(regexChanged(QString)));
   actionSelected(cmbActions->currentText());
 }
 
@@ -318,6 +320,32 @@ void View::save()
       break;
     }
   }
+}
+
+void View::commandChanged(QString newText)
+{
+onChange();
+}
+
+void View::regexChanged(QString newText)
+{
+  m_nregex.setNamedPattern(newText);
+  QPalette palette = txtRegex->palette();
+  QSet<QString> valid;
+  valid << "filename" << "line" << "col" << "code" << "message";
+  QSet<QString> diff = m_nregex.namedGroups() - valid;
+  if (!diff.isEmpty()) {
+    txtRegex->setToolTip(*diff.begin() + tr(" is not a valid name for a capturing group"));
+    palette.setColor(QPalette::Text, Qt::red);
+  } else if (!m_nregex.isValid()) {
+    palette.setColor(QPalette::Text, Qt::red);
+    txtRegex->setToolTip(tr("The regular expression is invalid"));
+  } else {
+    palette.setColor(QPalette::Text, Qt::black);
+    txtRegex->setToolTip(tr(""));
+  }
+  txtRegex->setPalette(palette);
+  onChange();
 }
 
 void View::onChange()
