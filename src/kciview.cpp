@@ -124,6 +124,7 @@ void View::run()
     filename = doc->url().path();
     directory = doc->url().directory();
   }
+  kDebug() << filename << "-" << directory;
   QString cmd = txtCommand->text();
   cmd = cmd.replace("%filename", filename).replace("%directory", directory);
   execute(cmd);

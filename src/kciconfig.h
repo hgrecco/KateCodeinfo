@@ -30,6 +30,12 @@ namespace KateCodeinfo
 namespace Store
 {
 
+struct Global
+{
+  bool saveBeforeRun;
+  unsigned int showNonParsed;
+};
+
 struct Action
 {
   bool enabled;
@@ -38,6 +44,8 @@ struct Action
   QString regex;
 };
 
+  Global readGlobal();
+  void writeGlobal(const Global& global);
   Action readAction(const QString& name);
   void writeAction(const QString& name, const QString& command, const QString& regex, bool enabled=true);
   QList<QString> actionNames();

@@ -210,6 +210,24 @@ void Config::defaults()
 namespace Store
 {
 
+Global readGlobal()
+{
+  KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
+  KConfigGroup config = _config.group("__global__");
+  Global global;
+  global.saveBeforeRun = (config.readEntry("saveBeforeRun","true") == "true");
+  global.showNonParsed = config.readEntry("showNonParsed", 1);
+  return global;
+}
+
+void writeGlobal(const Global& global)
+{
+  KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
+  KConfigGroup config = _config.group("__global__");
+  config.writeEntry("saveBeforeRun", global.saveBeforeRun);
+  config.writeEntry("showNonParsed", global.showNonParsed);
+}
+
 void writeAction(const QString& name, const QString& command, const QString& regex, bool enabled)
 {
   KConfig _config( "codeinfo", KConfig::NoGlobals, "appdata" );
