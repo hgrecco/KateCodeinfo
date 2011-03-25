@@ -22,10 +22,35 @@
 
 #include <QStringList>
 #include <QRegExp>
-#include <QHash>
 
 namespace KateCodeinfo
 {
+
+NamedRegExp::NamedRegExp(QString& regex):QRegExp() {
+  QRegExp named("\\(P<([^<]*)>");
+  kDebug() << "Regex before name transformation: " << regex;
+  int pos = 0;
+  int count = 0;
+  while(pos >= 0) {
+    pos = named.indexIn(regex, pos);
+    if(pos >= 0) {
+      pos += named.matchedLength();
+      m_order[named.cap(1)] = ++count;
+    }
+  }
+  regex.replace(named, "(");
+  setPattern(regex);
+  setPatternSyntax(QRegExp::RegExp2);
+}
+
+QString NamedRegExp::namedCap(QString groupName, QString notfound) {
+  QHash<QString, int>::const_iterator el;
+  if ((el = m_order.find(groupName)) != m_order.end()) {
+    return cap(el.value());
+  } else {
+    return notfound;
+  }
+}
 
 static QString eolDelimiter(const QString& str)
 {
@@ -39,30 +64,19 @@ static QString eolDelimiter(const QString& str)
   return separator;
 }
 
-static Info parseCodeinfoLine(const QString& line, const QRegExp& reg, const QHash<QString, int>& order)
+static Info parseCodeinfoLine(QString& line, NamedRegExp& nreg)
 {
   // the syntax types we support are
   // filename \t line number \t column number \t code \t message
-  int index = reg.indexIn(line);
-  QHash<QString, int>::const_iterator el;
-  Info info;
+  int index = nreg.indexIn(line);
+  Info info;    
 
   if ((info.parsed = (index > -1))) {
-    if((el = order.find("filename")) != order.end()) {
-      info.filename = reg.cap(el.value());
-    }
-    if((el = order.find("line")) != order.end()) {
-      info.line = reg.cap(el.value()).toInt();
-    }
-    if((el = order.find("col")) != order.end()) {
-      info.col = reg.cap(el.value()).toInt();
-    }
-    if((el = order.find("code")) != order.end()) {
-      info.code = reg.cap(el.value());
-    }
-    if((el = order.find("message")) != order.end()) {
-      info.message = reg.cap(el.value());
-    }
+    info.filename = nreg.namedCap("filename", "");
+    info.line = nreg.namedCap("line", "-1").toInt();
+    info.col = nreg.namedCap("col", "-1").toInt();
+    info.code = nreg.namedCap("code", "");
+    info.message = nreg.namedCap("message", "");
   }  else {
     info.message = line;
     info.line = -1;
@@ -74,29 +88,11 @@ QList<Info> parse(const QString& ci, QString regex)
 {
   QStringList l = ci.split(eolDelimiter(ci), QString::SkipEmptyParts);
 
-  QHash<QString, int> order;
-  QRegExp named("\\(P<([^<]*)>");
-  kDebug() << "Regex before name transformation: " << regex;
-  int pos = 0;
-  int count = 0;
-  while(pos >= 0) {
-    pos = named.indexIn(regex, pos);
-    if(pos >= 0) {
-      pos += named.matchedLength();
-      order[named.cap(1)] = ++count;
-    }
-  }
-  kDebug() << "Name transformation: " << order;
-  regex.replace(named, "(");
-  kDebug() << "Regex after name transformation: " << regex;
-  kDebug() << regex;
-
-  QRegExp reg(regex);
-  reg.setPatternSyntax(QRegExp::RegExp2);
+  NamedRegExp nreg = NamedRegExp(regex);
 
   QList<Info> results;
   for(int i = 0; i < l.size(); ++i) {
-    Info info = parseCodeinfoLine(l[i], reg, order);
+    Info info = parseCodeinfoLine(l[i], nreg);
     results.append(info);
   }
 

@@ -20,6 +20,8 @@
 #define KCIPARSER_H
 
 #include <QString>
+#include <QHash>
+#include <QRegExp>
 
 namespace KateCodeinfo
 {
@@ -35,6 +37,17 @@ public:
   int line;
   int col;
   bool parsed;
+};
+
+class NamedRegExp : public QRegExp {
+
+private:
+  QHash<QString, int> m_order;
+
+public:
+  NamedRegExp(QString& regex);
+  QString namedCap(QString groupName, QString notfound);
+
 };
 
 QList<Info> parse(const QString& ci, QString regex);
