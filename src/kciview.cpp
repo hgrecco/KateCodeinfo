@@ -26,7 +26,7 @@
 
 #include <ktexteditor/view.h>
 #include <kfiledialog.h>
-
+#include <kde_file.h>
 #include <QClipboard>
 #include <QMessageBox>
 
@@ -61,6 +61,7 @@ View::View(Kate::MainWindow *mainWindow)
   connect(lstCodeinfo, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(infoSelected(QTreeWidgetItem*, int)));
   connect(cmbActions, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(actionSelected(const QString &)));
   connect(txtRegex, SIGNAL(textChanged(QString)), this, SLOT(regexChanged(QString)));
+  connect(txtCommand, SIGNAL(textChanged(QString)), this, SLOT(commandChanged(QString)));
   actionSelected(cmbActions->currentText());
 }
 
@@ -156,7 +157,7 @@ void View::show(const QString& ci)
 
   foreach(const Info & info, infos) {
     if (!info.parsed && !showAnyway) {
-        continue;
+      continue;
     }
     QTreeWidgetItem* it = new QTreeWidgetItem(lstCodeinfo);
 
@@ -308,15 +309,15 @@ void View::save()
              tr("Do you want to create a new action with a different name or rename the old one?"),
              tr("&Rename"), tr("&New"), QString::null, 1, 1)) {
     case 0: //Rename
-        Store::deleteAction(m_currentAction);
-        Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
-        m_currentAction = cmbActions->currentText();
-        updateCmbActions();
-        cmbActions->setCurrentIndex(cmbActions->findText(m_currentAction));
+      Store::deleteAction(m_currentAction);
+      Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
+      m_currentAction = cmbActions->currentText();
+      updateCmbActions();
+      cmbActions->setCurrentIndex(cmbActions->findText(m_currentAction));
       break;
     default:
-        Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
-        m_currentAction = cmbActions->currentText();
+      Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
+      m_currentAction = cmbActions->currentText();
       break;
     }
   }
@@ -324,7 +325,16 @@ void View::save()
 
 void View::commandChanged(QString newText)
 {
-onChange();
+  QPalette palette = txtCommand->palette();
+  if (!checkExecMemo(newText)) {
+    txtCommand->setToolTip(tr("Command not found"));
+    palette.setColor(QPalette::Text, Qt::red);
+  } else {
+    palette.setColor(QPalette::Text, Qt::black);
+    txtCommand->setToolTip(tr(""));
+  }
+  txtCommand->setPalette(palette);
+  onChange();
 }
 
 void View::regexChanged(QString newText)
@@ -351,6 +361,50 @@ void View::regexChanged(QString newText)
 void View::onChange()
 {
   btnSave->setDisabled(false);
+}
+
+bool View::checkExecMemo(const QString& command)
+{
+QString tryexec = command.section( ' ', 0, 0, QString::SectionSkipEmpty );
+if (m_lastCheckExec.first != tryexec) {
+  m_lastCheckExec.first = tryexec;
+  m_lastCheckExec.second = checkExec(tryexec);
+}
+return m_lastCheckExec.second;
+}
+
+bool View::checkExec(const QString& command)
+{
+  QString tryexec = command.section( ' ', 0, 0, QString::SectionSkipEmpty );
+  // Code taken from kateexternaltools.cpp
+  if (!tryexec.isEmpty())
+  {
+    if (tryexec[0] == '/')
+    {
+      if (KDE::access(tryexec, R_OK | X_OK))
+      {
+        return false;
+      }
+    } else {
+      const QString path = QFile::decodeName(qgetenv("PATH"));
+      const QStringList dirs = path.split(KPATH_SEPARATOR, QString::SkipEmptyParts);
+      QStringList::ConstIterator it(dirs.begin());
+      bool match = false;
+      for (; it != dirs.end(); ++it)
+      {
+        QString fName = *it + '/' + tryexec;
+        if (KDE::access(fName, R_OK | X_OK) == 0)
+        {
+          match = true;
+          break;
+        }
+      }
+      if (!match)
+        return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 };

@@ -81,8 +81,12 @@ private:
 
   Store::Global m_global;
 
+  QPair<QString,bool> m_lastCheckExec;
+
   void setStatus(const QString& status);
   void execute(const QString& command);
+  bool checkExec(const QString &command);
+  bool checkExecMemo(const QString &command);
 };
 
 };
