@@ -151,7 +151,7 @@ void View::show(const QString& ci)
 {
   QList<Info> infos = parse(ci, txtRegex->text());
   if (ci.isEmpty()) {
-    infos << Info("No information to parse");
+    infos << Info(i18n("No information to parse"));
   } else {
     infos = parse(ci, txtRegex->text());
   }
@@ -257,7 +257,7 @@ void View::execute(const QString &command)
   kDebug() << "   execute '" << command << "'";
 
   m_proc->start();
-  setStatus("Running " +  cmbActions->currentText());
+  setStatus(i18n("Running %1",cmbActions->currentText()));
 }
 
 
@@ -277,7 +277,7 @@ void View::processExited(int /* exitCode */, QProcess::ExitStatus exitStatus)
     show(m_output);
 
   } else {
-    setStatus("Error while running " +  cmbActions->currentText());
+    setStatus(i18n("Error while running %1", cmbActions->currentText()));
   }
   btnRun->setDisabled(false);
 }
@@ -309,10 +309,10 @@ void View::save()
 
   if (m_currentAction != cmbActions->currentText()) {
     switch(QMessageBox::warning(
-             this->toolView, tr("Codeinfo plugin"),
-             tr("You have changed the name of the action.") +
-             tr("Do you want to create a new action with a different name or rename the old one?"),
-             tr("&Rename"), tr("&New"), QString::null, 1, 1)) {
+             this->toolView, i18n("Codeinfo plugin"),
+             i18n("You have changed the name of the action.\n"
+             "Do you want to create a new action with a different name or rename the old one?"),
+             i18n("&Rename"), i18n("&New"), QString::null, 1, 1)) {
     case 0: //Rename
       Store::deleteAction(m_currentAction);
       Store::writeAction(cmbActions->currentText(), txtCommand->text(), txtRegex->text());
@@ -331,12 +331,13 @@ void View::save()
 void View::commandChanged(QString newText)
 {
   QPalette palette = txtCommand->palette();
-  if (!checkExecMemo(newText)) {
-    txtCommand->setToolTip(tr("Command not found"));
+  QString exec = newText.section( ' ', 0, 0, QString::SectionSkipEmpty );
+  if (!checkExecMemo(exec)) {
+    txtCommand->setToolTip(i18n("Command not found.\nAre you sure that %1 is installed?", exec));
     palette.setColor(QPalette::Text, Qt::red);
   } else {
     palette.setColor(QPalette::Text, Qt::black);
-    txtCommand->setToolTip(tr(""));
+    txtCommand->setToolTip(i18n(""));
   }
   txtCommand->setPalette(palette);
   onChange();
@@ -350,14 +351,15 @@ void View::regexChanged(QString newText)
   valid << "filename" << "line" << "col" << "code" << "message";
   QSet<QString> diff = m_nregex.namedGroups() - valid;
   if (!diff.isEmpty()) {
-    txtRegex->setToolTip(*diff.begin() + tr(" is not a valid name for a capturing group"));
+    txtRegex->setToolTip(i18n("%1 is not a valid name for a capturing group.\n"
+                              "Possible names are: filename, line, col, code and message", *diff.begin()));
     palette.setColor(QPalette::Text, Qt::red);
   } else if (!m_nregex.isValid()) {
     palette.setColor(QPalette::Text, Qt::red);
-    txtRegex->setToolTip(tr("The regular expression is invalid"));
+    txtRegex->setToolTip(i18n("The regular expression is invalid"));
   } else {
     palette.setColor(QPalette::Text, Qt::black);
-    txtRegex->setToolTip(tr(""));
+    txtRegex->setToolTip(i18n(""));
   }
   txtRegex->setPalette(palette);
   onChange();
@@ -368,25 +370,23 @@ void View::onChange()
   btnSave->setDisabled(false);
 }
 
-bool View::checkExecMemo(const QString& command)
+bool View::checkExecMemo(const QString& exec)
 {
-QString tryexec = command.section( ' ', 0, 0, QString::SectionSkipEmpty );
-if (m_lastCheckExec.first != tryexec) {
-  m_lastCheckExec.first = tryexec;
-  m_lastCheckExec.second = checkExec(tryexec);
+if (m_lastCheckExec.first != exec) {
+  m_lastCheckExec.first = exec;
+  m_lastCheckExec.second = checkExec(exec);
 }
 return m_lastCheckExec.second;
 }
 
-bool View::checkExec(const QString& command)
-{
-  QString tryexec = command.section( ' ', 0, 0, QString::SectionSkipEmpty );
+bool View::checkExec(const QString& exec)
+{  
   // Code taken from kateexternaltools.cpp
-  if (!tryexec.isEmpty())
+  if (!exec.isEmpty())
   {
-    if (tryexec[0] == '/')
+    if (exec[0] == '/')
     {
-      if (KDE::access(tryexec, R_OK | X_OK))
+      if (KDE::access(exec, R_OK | X_OK))
       {
         return false;
       }
@@ -397,7 +397,7 @@ bool View::checkExec(const QString& command)
       bool match = false;
       for (; it != dirs.end(); ++it)
       {
-        QString fName = *it + '/' + tryexec;
+        QString fName = *it + '/' + exec;
         if (KDE::access(fName, R_OK | X_OK) == 0)
         {
           match = true;

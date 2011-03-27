@@ -131,9 +131,9 @@ void Config::loadDefault()
   QStringList content;
   switch(QMessageBox::warning(
            this, "Codeinfo plugin",
-           "This will overwrite your current action list with the default one.\n"
-           "Continue?",
-           "&Yes", "&No", QString::null, 1, 1)) {
+           i18n("This will overwrite your current action list with the default one.\n"
+           "Do you want to continue?"),
+           i18n("&Yes"), i18n("&No"), QString::null, 1, 1)) {
   case 0:
     for (int i=tblActions->rowCount(); --i >= 0; ) {
       tblActions->removeRow(i);
@@ -300,8 +300,8 @@ Action readAction(const QString& name)
     ac.regex = config.readEntry("regex", "");
   } else {
     ac.name = name;
-    ac.command = "Not found.";
-    ac.regex = "Not found.";
+    ac.command = i18n("Not found");
+    ac.regex = i18n("Not found");
   }
   return ac;
 }
