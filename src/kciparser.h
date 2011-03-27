@@ -31,6 +31,7 @@ class Info
 
 public:
   Info(): filename(""), code(""), message(""), line(0), col(0) {};
+  Info(const QString& message): filename(""), code(""), message(message), line(0), col(0) {};
   QString filename;
   QString code;
   QString message;

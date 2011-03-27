@@ -150,11 +150,15 @@ void View::loadClipboard()
 void View::show(const QString& ci)
 {
   QList<Info> infos = parse(ci, txtRegex->text());
-
-  lstCodeinfo->clear();
+  if (ci.isEmpty()) {
+    infos << Info("No information to parse");
+  } else {
+    infos = parse(ci, txtRegex->text());
+  }
 
   bool showAnyway = ((m_global.showNonParsed == 1) && btnConfig->isChecked()) or (m_global.showNonParsed == 2);
 
+  lstCodeinfo->clear();
   foreach(const Info & info, infos) {
     if (!info.parsed && !showAnyway) {
       continue;
@@ -167,13 +171,14 @@ void View::show(const QString& ci)
     it->setData(0, Qt::ToolTipRole, info.filename);
 
     // Line
-    it->setData(1, Qt::DisplayRole, QString::number(info.line));
-    it->setData(1, Qt::ToolTipRole, info.line);
+    if (!info.filename.isEmpty()) {
+      it->setData(1, Qt::DisplayRole, QString::number(info.line));
+      it->setData(1, Qt::ToolTipRole, info.line);
 
-    // Col
-    it->setData(2, Qt::DisplayRole, QString::number(info.col));
-    it->setData(2, Qt::ToolTipRole, info.col);
-
+      // Col
+      it->setData(2, Qt::DisplayRole, QString::number(info.col));
+      it->setData(2, Qt::ToolTipRole, info.col);
+    }
     // Code
     it->setData(3, Qt::DisplayRole, info.code);
     it->setData(3, Qt::ToolTipRole, info.code);
